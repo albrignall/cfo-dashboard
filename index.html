@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucidelusion 12-Month CFO Dashboard V3.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 font-sans min-h-screen pb-12">
+
+    <div class="bg-slate-900 border-b border-slate-800 sticky top-0 z-20 shadow-xl">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| 12-Month Scale Engine V3.1</span></h1>
+                <p class="text-xs text-slate-400 mt-1">Advanced LHA Math & Real-Time Taper Status</p>
+            </div>
+            
+            <div class="flex gap-4 text-xs bg-slate-950 p-3 rounded border border-slate-800">
+                <div>
+                    <label class="block text-slate-500 mb-1">Starting Biz (£)</label>
+                    <input type="number" id="g_starling" value="2031.74" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="calculate()">
+                </div>
+                <div>
+                    <label class="block text-slate-500 mb-1">Starting Pers. (£)</label>
+                    <input type="number" id="g_personal" value="4843.11" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="calculate()">
+                </div>
+                <div>
+                    <label class="block text-slate-500 mb-1">Capital Intro (£)</label>
+                    <input type="number" id="g_capital" value="4500.00" class="w-24 bg-slate-800 border border-emerald-900 rounded px-2 py-1 text-emerald-400" oninput="calculate()">
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-800/50 border-t border-slate-800 p-4">
+            <div class="max-w-7xl mx-auto px-6 flex flex-wrap gap-6 items-center">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="h_active" class="w-4 h-4 accent-indigo-500" onchange="calculate()">
+                    <label class="font-bold text-indigo-400 uppercase tracking-wide text-sm">Enable Housing Transition</label>
+                </div>
+                <div class="flex gap-4 opacity-50 transition-opacity duration-300" id="housing_controls">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Move-in Month</label>
+                        <select id="h_month" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-sm" onchange="calculate()">
+                            <option value="5">AP6 (September)</option>
+                            <option value="6">AP7 (October)</option>
+                            <option value="7">AP8 (November)</option>
+                            <option value="8">AP9 (December)</option>
+                            <option value="9">AP10 (January)</option>
+                            <option value="10">AP11 (February)</option>
+                            <option value="11">AP12 (March)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Inner London Cap (LHA)</label>
+                        <select id="h_lha" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-sm" onchange="calculate()">
+                            <option value="1621">2-Bed (LHA: £1,621)</option>
+                            <option value="2044">3-Bed (LHA: £2,044)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Actual Rent Found (£)</label>
+                        <input type="number" id="h_rent" value="2800" class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-rose-400 font-bold text-sm" oninput="calculate()">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 mt-8">
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Assets Funded</div>
+                <div id="tot_tech" class="text-2xl font-black text-white">£0.00</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total UC Received</div>
+                <div id="tot_uc" class="text-2xl font-black text-emerald-400">£0.00</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Rent Shortfall</div>
+                <div id="tot_shortfall" class="text-2xl font-black text-rose-400">£0.00</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Year-End Personal Savings</div>
+                <div id="tot_pers" class="text-2xl font-black text-white">£0.00</div>
+            </div>
+        </div>
+
+        <div id="ap-container" class="space-y-4"></div>
+    </div>
+
+    <script>
+        const fmt = (n) => '£' + n.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        const apData = [
+            { id: 1, month: "AP 1 (Apr)", tech: "RTX Laptop + Admin", exp: 2819.88 },
+            { id: 2, month: "AP 2 (May)", tech: "Big Cartel Subs", exp: 212.00 },
+            { id: 3, month: "AP 3 (Jun)", tech: "iPhone 16 PM + 1x NAS", exp: 1237.95 },
+            { id: 4, month: "AP 4 (Jul)", tech: "NAS Enclosure + 1x NAS", exp: 1198.95 },
+            { id: 5, month: "AP 5 (Aug)", tech: "2x NAS Drives", exp: 1159.90 },
+            { id: 6, month: "AP 6 (Sep)", tech: "OLED Studio Monitor", exp: 849.00 },
+            { id: 7, month: "AP 7 (Oct)", tech: "Gold Bullion / Raw Material", exp: 1500.00 },
+            { id: 8, month: "AP 8 (Nov)", tech: "Silver & Gemstones", exp: 1200.00 },
+            { id: 9, month: "AP 9 (Dec)", tech: "Grand Format Framing", exp: 800.00 },
+            { id: 10, month: "AP 10 (Jan)", tech: "B2B Marketing & PR", exp: 500.00 },
+            { id: 11, month: "AP 11 (Feb)", tech: "Bespoke Shipping Crates", exp: 300.00 },
+            { id: 12, month: "AP 12 (Mar)", tech: "B2B Trade Show Fees", exp: 600.00 }
+        ];
+
+        function init() {
+            const container = document.getElementById('ap-container');
+            let html = '';
+
+            apData.forEach((ap, i) => {
+                html += `
+                <div class="bg-slate-900 rounded-lg border border-slate-800 shadow-sm relative">
+                    <div class="grid grid-cols-1 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-800">
+                        
+                        <div class="p-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h2 class="font-bold text-slate-200">${ap.month}</h2>
+                                <span id="loss_badge_${i}" class="text-[10px] font-bold px-2 py-0.5 rounded border"></span>
+                            </div>
+                            <label class="block text-xs text-slate-400 mb-1">Gross Income (£)</label>
+                            <input type="number" id="inc_${i}" value="${i === 0 ? 2080 : 1800}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-white text-sm mb-2" oninput="calculate()">
+                            <label class="block text-xs text-slate-400 mb-1">Personal Spend (Kids/Life)</label>
+                            <input type="number" id="pers_${i}" value="0" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-amber-200 text-sm" oninput="calculate()">
+                        </div>
+
+                        <div class="p-4">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Business Exp.</h3>
+                            <input type="text" value="${ap.tech}" class="w-full bg-transparent border-b border-slate-700 text-slate-300 text-xs mb-2 pb-1" readonly>
+                            <label class="block text-xs text-slate-400 mb-1">Cost (£)</label>
+                            <input type="number" id="bizExp_${i}" value="${ap.exp}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-emerald-400 font-bold text-sm" oninput="calculate()">
+                        </div>
+
+                        <div class="p-4 bg-slate-800/20">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Algorithm</h3>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Work Allowance:</span><span id="wa_${i}" class="text-white"></span></div>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Max UC Allowed:</span><span id="maxUc_${i}" class="text-indigo-400"></span></div>
+                            <div class="flex justify-between text-xs mb-2"><span class="text-slate-400">- 55% Deduction:</span><span id="ded_${i}" class="text-rose-400"></span></div>
+                            <div class="flex justify-between text-sm font-bold border-t border-slate-700 pt-1">
+                                <span class="text-slate-300">Final UC Paid:</span><span id="ucPaid_${i}" class="text-emerald-400"></span>
+                            </div>
+                            <div id="taper_status_${i}" class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded"></div>
+                        </div>
+
+                        <div class="p-4" id="rent_col_${i}">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Housing Reality</h3>
+                            <div id="rent_data_${i}">
+                                <div class="text-xs text-slate-500 italic mt-4">Not Renting</div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-slate-800/40">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">End Balances</h3>
+                            <div class="mb-2">
+                                <span class="block text-xs text-slate-400">Biz (Starling)</span>
+                                <span id="bal_biz_${i}" class="text-lg font-bold text-white"></span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-400">Personal (NatWest)</span>
+                                <div id="bal_pers_${i}"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            
+            document.getElementById('h_active').addEventListener('change', function() {
+                const controls = document.getElementById('housing_controls');
+                if(this.checked) controls.classList.remove('opacity-50');
+                else controls.classList.add('opacity-50');
+                calculate();
+            });
+
+            calculate();
+        }
+
+        function calculate() {
+            const startBiz = parseFloat(document.getElementById('g_starling').value) || 0;
+            const startPers = parseFloat(document.getElementById('g_personal').value) || 0;
+            const capIntro = parseFloat(document.getElementById('g_capital').value) || 0;
+            
+            const isRenting = document.getElementById('h_active').checked;
+            const rentMonthIndex = parseInt(document.getElementById('h_month').value);
+            const lhaRate = parseFloat(document.getElementById('h_lha').value) || 0;
+            const actualRent = parseFloat(document.getElementById('h_rent').value) || 0;
+
+            const baseUC = 1051.00;
+            const waHigh = 710.00; // Standard Safe
+            const waLow = 404.00;  // Renting Drop
+
+            let curBiz = startBiz + capIntro;
+            let curPers = startPers - capIntro;
+            let lossCF = 0;
+
+            let totTech = 0, totUC = 0, totShortfall = 0;
+
+            for (let i = 0; i < 12; i++) {
+                let inc = parseFloat(document.getElementById(`inc_${i}`).value) || 0;
+                let bizExp = parseFloat(document.getElementById(`bizExp_${i}`).value) || 0;
+                let persExp = parseFloat(document.getElementById(`pers_${i}`).value) || 0;
+
+                let isRentingThisMonth = isRenting && (i >= rentMonthIndex);
+                
+                // FIXED HOUSING LOGIC: UC pays the lowest of Actual Rent vs LHA Cap
+                let housingElement = isRentingThisMonth ? Math.min(actualRent, lhaRate) : 0;
+                let rentShortfall = isRentingThisMonth ? Math.max(0, actualRent - housingElement) : 0;
+                
+                let curWA = isRentingThisMonth ? waLow : waHigh;
+                let curMaxUC = baseUC + housingElement;
+
+                // Profit Math
+                let netProfit = inc - bizExp;
+                let adjProfit = Math.max(0, netProfit - lossCF);
+                let newLossCF = netProfit - lossCF < 0 ? Math.abs(netProfit - lossCF) : 0;
+
+                // Deduction Math
+                let deduction = Math.max(0, (adjProfit - curWA) * 0.55);
+                let finalUC = Math.max(0, curMaxUC - deduction);
+
+                // Update Balances
+                curBiz = curBiz + inc - bizExp;
+                curPers = curPers + finalUC - persExp - rentShortfall;
+
+                // Accumulate
+                totTech += bizExp;
+                totUC += finalUC;
+                totShortfall += rentShortfall;
+
+                // --- DOM UPDATES ---
+                
+                // Loss Badges
+                let lBadge = document.getElementById(`loss_badge_${i}`);
+                if (newLossCF > 0) {
+                    lBadge.textContent = `Carrying Loss: ${fmt(newLossCF)}`;
+                    lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-rose-950/40 text-rose-400 border border-rose-900";
+                } else if (lossCF > 0) {
+                    lBadge.textContent = `Absorbed Prev Loss`;
+                    lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900";
+                } else {
+                    lBadge.textContent = "Clean Period";
+                    lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700";
+                }
+
+                document.getElementById(`wa_${i}`).textContent = fmt(curWA);
+                document.getElementById(`wa_${i}`).className = isRentingThisMonth ? "text-rose-400 font-bold" : "text-emerald-400 font-bold";
+                document.getElementById(`maxUc_${i}`).textContent = fmt(curMaxUC);
+                document.getElementById(`ded_${i}`).textContent = `-${fmt(deduction)}`;
+                document.getElementById(`ucPaid_${i}`).textContent = fmt(finalUC);
+
+                // Taper Status Badges
+                let tStatus = document.getElementById(`taper_status_${i}`);
+                if (deduction > 0) {
+                    tStatus.textContent = "⚠️ 55% TAPER ACTIVE";
+                    tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-rose-950/40 text-rose-400 border border-rose-900";
+                } else if (adjProfit === 0 && lossCF > 0) {
+                    tStatus.textContent = "🛡️ SHIELDED BY LOSSES";
+                    tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-indigo-950/40 text-indigo-400 border border-indigo-900";
+                } else if (adjProfit <= curWA) {
+                    tStatus.textContent = "🛡️ SHIELDED BY WORK ALLOWANCE";
+                    tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900";
+                }
+
+                // Rent UI
+                let rentUI = document.getElementById(`rent_data_${i}`);
+                let rentCol = document.getElementById(`rent_col_${i}`);
+                if (isRentingThisMonth) {
+                    rentCol.classList.add('bg-rose-950/20');
+                    rentUI.innerHTML = `
+                        <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Actual Rent:</span><span class="text-white">${fmt(actualRent)}</span></div>
+                        <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">UC Housing Sub:</span><span class="text-emerald-400">-${fmt(housingElement)}</span></div>
+                        ${actualRent > lhaRate ? `<div class="text-[10px] text-rose-400 text-right mb-1">Capped at LHA limit</div>` : ''}
+                        <div class="flex justify-between text-sm font-bold border-t border-rose-900/50 pt-1 mt-1">
+                            <span class="text-rose-400">You Pay (Shortfall):</span><span class="text-rose-400">${fmt(rentShortfall)}</span>
+                        </div>
+                    `;
+                } else {
+                    rentCol.classList.remove('bg-rose-950/20');
+                    rentUI.innerHTML = `<div class="text-xs text-slate-500 italic mt-4">No Rent Obligations</div>`;
+                }
+
+                document.getElementById(`bal_biz_${i}`).textContent = fmt(curBiz);
+                
+                let pBal = document.getElementById(`bal_pers_${i}`);
+                if (curPers >= 6000) {
+                    pBal.innerHTML = `<span class="text-lg font-bold text-rose-500">${fmt(curPers)}</span> <span class="text-[10px] bg-rose-900 text-white px-1 rounded ml-1">OVER £6K</span>`;
+                } else {
+                    pBal.innerHTML = `<span class="text-lg font-bold text-emerald-400">${fmt(curPers)}</span>`;
+                }
+
+                lossCF = newLossCF;
+            }
+
+            document.getElementById('tot_tech').textContent = fmt(totTech);
+            document.getElementById('tot_uc').textContent = fmt(totUC);
+            document.getElementById('tot_shortfall').textContent = fmt(totShortfall);
+            document.getElementById('tot_pers').textContent = fmt(curPers);
+            document.getElementById('tot_pers').className = curPers >= 6000 ? "text-2xl font-black text-rose-500" : "text-2xl font-black text-white";
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
