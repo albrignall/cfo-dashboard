@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucidelusion 12-Month CFO Dashboard V3.1</title>
+    <title>Lucidelusion 12-Month CFO Dashboard V3.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         ::-webkit-scrollbar { width: 8px; }
@@ -16,8 +16,8 @@
     <div class="bg-slate-900 border-b border-slate-800 sticky top-0 z-20 shadow-xl">
         <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| 12-Month Scale Engine V3.1</span></h1>
-                <p class="text-xs text-slate-400 mt-1">Advanced LHA Math & Real-Time Taper Status</p>
+                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| 12-Month Scale Engine V3.3</span></h1>
+                <p class="text-xs text-slate-400 mt-1">Advanced LHA Math, Real-Time Taper Status & Auto-Save</p>
             </div>
             
             <div class="flex gap-4 text-xs bg-slate-950 p-3 rounded border border-slate-800">
@@ -113,6 +113,35 @@
             { id: 12, month: "AP 12 (Mar)", tech: "B2B Trade Show Fees", exp: 600.00 }
         ];
 
+        function saveState() {
+            const inputs = document.querySelectorAll('input, select');
+            const state = {};
+            inputs.forEach(input => {
+                state[input.id] = input.type === 'checkbox' ? input.checked : input.value;
+            });
+            localStorage.setItem('lucid_cfo_state', JSON.stringify(state));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('lucid_cfo_state');
+            if (saved) {
+                const state = JSON.parse(saved);
+                for (const id in state) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (el.type === 'checkbox') {
+                            el.checked = state[id];
+                            const controls = document.getElementById('housing_controls');
+                            if(el.checked) controls.classList.remove('opacity-50');
+                            else controls.classList.add('opacity-50');
+                        } else {
+                            el.value = state[id];
+                        }
+                    }
+                }
+            }
+        }
+
         function init() {
             const container = document.getElementById('ap-container');
             let html = '';
@@ -121,7 +150,6 @@
                 html += `
                 <div class="bg-slate-900 rounded-lg border border-slate-800 shadow-sm relative">
                     <div class="grid grid-cols-1 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-800">
-                        
                         <div class="p-4">
                             <div class="flex justify-between items-center mb-3">
                                 <h2 class="font-bold text-slate-200">${ap.month}</h2>
@@ -132,44 +160,32 @@
                             <label class="block text-xs text-slate-400 mb-1">Personal Spend (Kids/Life)</label>
                             <input type="number" id="pers_${i}" value="0" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-amber-200 text-sm" oninput="calculate()">
                         </div>
-
                         <div class="p-4">
                             <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Business Exp.</h3>
-                            <input type="text" value="${ap.tech}" class="w-full bg-transparent border-b border-slate-700 text-slate-300 text-xs mb-2 pb-1" readonly>
+                            <input type="text" id="techName_${i}" value="${ap.tech}" class="w-full bg-transparent border-b border-slate-700 text-slate-300 text-xs mb-2 pb-1" oninput="calculate()">
                             <label class="block text-xs text-slate-400 mb-1">Cost (£)</label>
                             <input type="number" id="bizExp_${i}" value="${ap.exp}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-emerald-400 font-bold text-sm" oninput="calculate()">
                         </div>
-
                         <div class="p-4 bg-slate-800/20">
                             <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Algorithm</h3>
-                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Work Allowance:</span><span id="wa_${i}" class="text-white"></span></div>
-                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Max UC Allowed:</span><span id="maxUc_${i}" class="text-indigo-400"></span></div>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Net Profit:</span><span id="np_${i}" class="text-white font-medium"></span></div>
+                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500">Allowance Limit:</span><span id="wa_${i}" class="text-slate-500"></span></div>
+                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500">Max UC Allowed:</span><span id="maxUc_${i}" class="text-indigo-400"></span></div>
                             <div class="flex justify-between text-xs mb-2"><span class="text-slate-400">- 55% Deduction:</span><span id="ded_${i}" class="text-rose-400"></span></div>
                             <div class="flex justify-between text-sm font-bold border-t border-slate-700 pt-1">
                                 <span class="text-slate-300">Final UC Paid:</span><span id="ucPaid_${i}" class="text-emerald-400"></span>
                             </div>
                             <div id="taper_status_${i}" class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded"></div>
                         </div>
-
                         <div class="p-4" id="rent_col_${i}">
                             <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Housing Reality</h3>
-                            <div id="rent_data_${i}">
-                                <div class="text-xs text-slate-500 italic mt-4">Not Renting</div>
-                            </div>
+                            <div id="rent_data_${i}"></div>
                         </div>
-
                         <div class="p-4 bg-slate-800/40">
                             <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">End Balances</h3>
-                            <div class="mb-2">
-                                <span class="block text-xs text-slate-400">Biz (Starling)</span>
-                                <span id="bal_biz_${i}" class="text-lg font-bold text-white"></span>
-                            </div>
-                            <div>
-                                <span class="block text-xs text-slate-400">Personal (NatWest)</span>
-                                <div id="bal_pers_${i}"></div>
-                            </div>
+                            <div class="mb-2"><span class="block text-xs text-slate-400">Biz (Starling)</span><span id="bal_biz_${i}" class="text-lg font-bold text-white"></span></div>
+                            <div><span class="block text-xs text-slate-400">Personal (NatWest)</span><div id="bal_pers_${i}"></div></div>
                         </div>
-
                     </div>
                 </div>
                 `;
@@ -184,6 +200,7 @@
                 calculate();
             });
 
+            loadState();
             calculate();
         }
 
@@ -198,8 +215,8 @@
             const actualRent = parseFloat(document.getElementById('h_rent').value) || 0;
 
             const baseUC = 1051.00;
-            const waHigh = 710.00; // Standard Safe
-            const waLow = 404.00;  // Renting Drop
+            const waHigh = 710.00;
+            const waLow = 404.00;
 
             let curBiz = startBiz + capIntro;
             let curPers = startPers - capIntro;
@@ -214,91 +231,57 @@
 
                 let isRentingThisMonth = isRenting && (i >= rentMonthIndex);
                 
-                // FIXED HOUSING LOGIC: UC pays the lowest of Actual Rent vs LHA Cap
                 let housingElement = isRentingThisMonth ? Math.min(actualRent, lhaRate) : 0;
                 let rentShortfall = isRentingThisMonth ? Math.max(0, actualRent - housingElement) : 0;
                 
                 let curWA = isRentingThisMonth ? waLow : waHigh;
                 let curMaxUC = baseUC + housingElement;
 
-                // Profit Math
                 let netProfit = inc - bizExp;
                 let adjProfit = Math.max(0, netProfit - lossCF);
                 let newLossCF = netProfit - lossCF < 0 ? Math.abs(netProfit - lossCF) : 0;
 
-                // Deduction Math
                 let deduction = Math.max(0, (adjProfit - curWA) * 0.55);
                 let finalUC = Math.max(0, curMaxUC - deduction);
 
-                // Update Balances
                 curBiz = curBiz + inc - bizExp;
                 curPers = curPers + finalUC - persExp - rentShortfall;
 
-                // Accumulate
                 totTech += bizExp;
                 totUC += finalUC;
                 totShortfall += rentShortfall;
 
-                // --- DOM UPDATES ---
-                
-                // Loss Badges
                 let lBadge = document.getElementById(`loss_badge_${i}`);
-                if (newLossCF > 0) {
-                    lBadge.textContent = `Carrying Loss: ${fmt(newLossCF)}`;
-                    lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-rose-950/40 text-rose-400 border border-rose-900";
-                } else if (lossCF > 0) {
-                    lBadge.textContent = `Absorbed Prev Loss`;
-                    lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900";
-                } else {
-                    lBadge.textContent = "Clean Period";
-                    lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700";
-                }
+                if (newLossCF > 0) { lBadge.textContent = `Carrying Loss: ${fmt(newLossCF)}`; lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-rose-950/40 text-rose-400 border border-rose-900"; }
+                else if (lossCF > 0) { lBadge.textContent = `Absorbed Prev Loss`; lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900"; }
+                else { lBadge.textContent = "Clean Period"; lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700"; }
 
+                // --- NEW UI UPDATES FOR CLARITY ---
+                document.getElementById(`np_${i}`).textContent = fmt(adjProfit);
                 document.getElementById(`wa_${i}`).textContent = fmt(curWA);
-                document.getElementById(`wa_${i}`).className = isRentingThisMonth ? "text-rose-400 font-bold" : "text-emerald-400 font-bold";
                 document.getElementById(`maxUc_${i}`).textContent = fmt(curMaxUC);
                 document.getElementById(`ded_${i}`).textContent = `-${fmt(deduction)}`;
                 document.getElementById(`ucPaid_${i}`).textContent = fmt(finalUC);
 
-                // Taper Status Badges
                 let tStatus = document.getElementById(`taper_status_${i}`);
-                if (deduction > 0) {
-                    tStatus.textContent = "⚠️ 55% TAPER ACTIVE";
-                    tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-rose-950/40 text-rose-400 border border-rose-900";
-                } else if (adjProfit === 0 && lossCF > 0) {
-                    tStatus.textContent = "🛡️ SHIELDED BY LOSSES";
-                    tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-indigo-950/40 text-indigo-400 border border-indigo-900";
-                } else if (adjProfit <= curWA) {
-                    tStatus.textContent = "🛡️ SHIELDED BY WORK ALLOWANCE";
-                    tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900";
-                }
+                if (deduction > 0) { tStatus.textContent = "⚠️ 55% TAPER ACTIVE"; tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-rose-950/40 text-rose-400 border border-rose-900"; }
+                else if (adjProfit === 0 && lossCF > 0) { tStatus.textContent = "🛡️ SHIELDED BY LOSSES"; tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-indigo-950/40 text-indigo-400 border border-indigo-900"; }
+                else if (adjProfit <= curWA) { tStatus.textContent = "🛡️ SHIELDED BY ALLOWANCE"; tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900"; }
 
-                // Rent UI
                 let rentUI = document.getElementById(`rent_data_${i}`);
                 let rentCol = document.getElementById(`rent_col_${i}`);
                 if (isRentingThisMonth) {
                     rentCol.classList.add('bg-rose-950/20');
-                    rentUI.innerHTML = `
-                        <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Actual Rent:</span><span class="text-white">${fmt(actualRent)}</span></div>
-                        <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">UC Housing Sub:</span><span class="text-emerald-400">-${fmt(housingElement)}</span></div>
-                        ${actualRent > lhaRate ? `<div class="text-[10px] text-rose-400 text-right mb-1">Capped at LHA limit</div>` : ''}
-                        <div class="flex justify-between text-sm font-bold border-t border-rose-900/50 pt-1 mt-1">
-                            <span class="text-rose-400">You Pay (Shortfall):</span><span class="text-rose-400">${fmt(rentShortfall)}</span>
-                        </div>
-                    `;
+                    rentUI.innerHTML = `<div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Actual Rent:</span><span class="text-white">${fmt(actualRent)}</span></div><div class="flex justify-between text-xs mb-1"><span class="text-slate-400">UC Housing Sub:</span><span class="text-emerald-400">-${fmt(housingElement)}</span></div>${actualRent > lhaRate ? `<div class="text-[10px] text-rose-400 text-right mb-1">Capped at LHA limit</div>` : ''}<div class="flex justify-between text-sm font-bold border-t border-rose-900/50 pt-1 mt-1"><span class="text-rose-400">You Pay (Shortfall):</span><span class="text-rose-400">${fmt(rentShortfall)}</span></div>`;
                 } else {
                     rentCol.classList.remove('bg-rose-950/20');
                     rentUI.innerHTML = `<div class="text-xs text-slate-500 italic mt-4">No Rent Obligations</div>`;
                 }
 
                 document.getElementById(`bal_biz_${i}`).textContent = fmt(curBiz);
-                
                 let pBal = document.getElementById(`bal_pers_${i}`);
-                if (curPers >= 6000) {
-                    pBal.innerHTML = `<span class="text-lg font-bold text-rose-500">${fmt(curPers)}</span> <span class="text-[10px] bg-rose-900 text-white px-1 rounded ml-1">OVER £6K</span>`;
-                } else {
-                    pBal.innerHTML = `<span class="text-lg font-bold text-emerald-400">${fmt(curPers)}</span>`;
-                }
+                if (curPers >= 6000) { pBal.innerHTML = `<span class="text-lg font-bold text-rose-500">${fmt(curPers)}</span> <span class="text-[10px] bg-rose-900 text-white px-1 rounded ml-1">OVER £6K</span>`; }
+                else { pBal.innerHTML = `<span class="text-lg font-bold text-emerald-400">${fmt(curPers)}</span>`; }
 
                 lossCF = newLossCF;
             }
@@ -308,6 +291,8 @@
             document.getElementById('tot_shortfall').textContent = fmt(totShortfall);
             document.getElementById('tot_pers').textContent = fmt(curPers);
             document.getElementById('tot_pers').className = curPers >= 6000 ? "text-2xl font-black text-rose-500" : "text-2xl font-black text-white";
+
+            saveState();
         }
 
         document.addEventListener('DOMContentLoaded', init);
