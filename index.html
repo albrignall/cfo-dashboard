@@ -3,299 +3,362 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucidelusion 12-Month CFO Dashboard V3.3</title>
+    <title>Lucidelusion ERP & UC Reporter V4.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .ledger-row input, .ledger-row select { background: #020617; border: 1px solid #1e293b; color: #e2e8f0; font-size: 0.75rem; padding: 4px 6px; border-radius: 4px; }
+        .ledger-row input:focus, .ledger-row select:focus { border-color: #10b981; outline: none; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200 font-sans min-h-screen pb-12">
+<body class="bg-slate-950 text-slate-200 font-sans min-h-screen pb-24">
 
-    <div class="bg-slate-900 border-b border-slate-800 sticky top-0 z-20 shadow-xl">
+    <div class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-xl">
         <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| 12-Month Scale Engine V3.3</span></h1>
-                <p class="text-xs text-slate-400 mt-1">Advanced LHA Math, Real-Time Taper Status & Auto-Save</p>
+                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| ERP V4.0</span></h1>
+                <p class="text-xs text-slate-400 mt-1">Dynamic Ledgers, DWP Reporting & Cash Drawings</p>
             </div>
             
             <div class="flex gap-4 text-xs bg-slate-950 p-3 rounded border border-slate-800">
                 <div>
                     <label class="block text-slate-500 mb-1">Starting Biz (£)</label>
-                    <input type="number" id="g_starling" value="2031.74" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="calculate()">
+                    <input type="number" id="g_starling" value="2031.74" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="saveAndCalc()">
                 </div>
                 <div>
                     <label class="block text-slate-500 mb-1">Starting Pers. (£)</label>
-                    <input type="number" id="g_personal" value="4843.11" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="calculate()">
+                    <input type="number" id="g_personal" value="4843.11" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="saveAndCalc()">
                 </div>
                 <div>
                     <label class="block text-slate-500 mb-1">Capital Intro (£)</label>
-                    <input type="number" id="g_capital" value="4500.00" class="w-24 bg-slate-800 border border-emerald-900 rounded px-2 py-1 text-emerald-400" oninput="calculate()">
+                    <input type="number" id="g_capital" value="4500.00" class="w-24 bg-slate-800 border border-emerald-900 rounded px-2 py-1 text-emerald-400" oninput="saveAndCalc()">
                 </div>
             </div>
         </div>
 
-        <div class="bg-slate-800/50 border-t border-slate-800 p-4">
+        <div class="bg-slate-800/50 border-t border-slate-800 p-3">
             <div class="max-w-7xl mx-auto px-6 flex flex-wrap gap-6 items-center">
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" id="h_active" class="w-4 h-4 accent-indigo-500" onchange="calculate()">
-                    <label class="font-bold text-indigo-400 uppercase tracking-wide text-sm">Enable Housing Transition</label>
+                    <input type="checkbox" id="h_active" class="w-4 h-4 accent-indigo-500" onchange="toggleHousing(); saveAndCalc()">
+                    <label class="font-bold text-indigo-400 uppercase tracking-wide text-xs">Enable Housing</label>
                 </div>
                 <div class="flex gap-4 opacity-50 transition-opacity duration-300" id="housing_controls">
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">Move-in Month</label>
-                        <select id="h_month" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-sm" onchange="calculate()">
-                            <option value="5">AP6 (September)</option>
-                            <option value="6">AP7 (October)</option>
-                            <option value="7">AP8 (November)</option>
-                            <option value="8">AP9 (December)</option>
-                            <option value="9">AP10 (January)</option>
-                            <option value="10">AP11 (February)</option>
-                            <option value="11">AP12 (March)</option>
+                        <select id="h_month" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs" onchange="saveAndCalc()">
+                            <option value="5">AP6 (Sep)</option><option value="6">AP7 (Oct)</option><option value="7">AP8 (Nov)</option>
+                            <option value="8">AP9 (Dec)</option><option value="9">AP10 (Jan)</option><option value="10">AP11 (Feb)</option><option value="11">AP12 (Mar)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">Inner London Cap (LHA)</label>
-                        <select id="h_lha" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-sm" onchange="calculate()">
-                            <option value="1621">2-Bed (LHA: £1,621)</option>
-                            <option value="2044">3-Bed (LHA: £2,044)</option>
+                        <select id="h_lha" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs" onchange="saveAndCalc()">
+                            <option value="1621">2-Bed (LHA: £1621)</option><option value="2044">3-Bed (LHA: £2044)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">Actual Rent Found (£)</label>
-                        <input type="number" id="h_rent" value="2800" class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-rose-400 font-bold text-sm" oninput="calculate()">
+                        <input type="number" id="h_rent" value="2800" placeholder="Actual Rent" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-rose-400 font-bold text-xs" oninput="saveAndCalc()">
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-6 mt-8">
-        
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
-                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Assets Funded</div>
-                <div id="tot_tech" class="text-2xl font-black text-white">£0.00</div>
-            </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
-                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total UC Received</div>
-                <div id="tot_uc" class="text-2xl font-black text-emerald-400">£0.00</div>
-            </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
-                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Rent Shortfall</div>
-                <div id="tot_shortfall" class="text-2xl font-black text-rose-400">£0.00</div>
-            </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
-                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Year-End Personal Savings</div>
-                <div id="tot_pers" class="text-2xl font-black text-white">£0.00</div>
-            </div>
-        </div>
+    <div class="max-w-7xl mx-auto px-6 mt-6">
+        <div id="ap-container" class="space-y-6"></div>
+    </div>
 
-        <div id="ap-container" class="space-y-4"></div>
+    <div class="fixed bottom-6 right-6 z-50">
+        <button onclick="exportReport()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-full shadow-lg border border-indigo-400 flex items-center gap-2 transition-transform transform hover:scale-105">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Export DWP Report
+        </button>
     </div>
 
     <script>
         const fmt = (n) => '£' + n.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-        const apData = [
-            { id: 1, month: "AP 1 (Apr)", tech: "RTX Laptop + Admin", exp: 2819.88 },
-            { id: 2, month: "AP 2 (May)", tech: "Big Cartel Subs", exp: 212.00 },
-            { id: 3, month: "AP 3 (Jun)", tech: "iPhone 16 PM + 1x NAS", exp: 1237.95 },
-            { id: 4, month: "AP 4 (Jul)", tech: "NAS Enclosure + 1x NAS", exp: 1198.95 },
-            { id: 5, month: "AP 5 (Aug)", tech: "2x NAS Drives", exp: 1159.90 },
-            { id: 6, month: "AP 6 (Sep)", tech: "OLED Studio Monitor", exp: 849.00 },
-            { id: 7, month: "AP 7 (Oct)", tech: "Gold Bullion / Raw Material", exp: 1500.00 },
-            { id: 8, month: "AP 8 (Nov)", tech: "Silver & Gemstones", exp: 1200.00 },
-            { id: 9, month: "AP 9 (Dec)", tech: "Grand Format Framing", exp: 800.00 },
-            { id: 10, month: "AP 10 (Jan)", tech: "B2B Marketing & PR", exp: 500.00 },
-            { id: 11, month: "AP 11 (Feb)", tech: "Bespoke Shipping Crates", exp: 300.00 },
-            { id: 12, month: "AP 12 (Mar)", tech: "B2B Trade Show Fees", exp: 600.00 }
+        
+        const dwpCategories = [
+            "Equipment & Hardware",
+            "Stock & Raw Materials",
+            "Software & Subscriptions",
+            "Marketing & PR",
+            "Admin & Professional Fees",
+            "Travel & Transport",
+            "Rent & Utilities (Business)"
         ];
 
+        // Default Data Template
+        const defaultState = {
+            globals: { starling: 2031.74, personal: 4843.11, capital: 4500, h_active: false, h_month: 5, h_lha: 1621, h_rent: 2800 },
+            aps: Array(12).fill(null).map((_, i) => ({
+                monthName: `AP ${i+1}`,
+                incomes: i === 0 ? [{desc: "Pre-booked Client", customer: "Client A", amount: 2080}] : [],
+                expenses: i === 0 ? [{desc: "RTX Laptop + Admin", vendor: "Overclockers", cat: "Equipment & Hardware", amount: 2819.88}] : [],
+                drawings: 0,
+                persExp: 0,
+                ledgerOpen: false
+            }))
+        };
+
+        // Load State or Init
+        let state = JSON.parse(localStorage.getItem('lucid_v4_state')) || defaultState;
+
         function saveState() {
-            const inputs = document.querySelectorAll('input, select');
-            const state = {};
-            inputs.forEach(input => {
-                state[input.id] = input.type === 'checkbox' ? input.checked : input.value;
-            });
-            localStorage.setItem('lucid_cfo_state', JSON.stringify(state));
+            // Update globals from UI
+            state.globals.starling = parseFloat(document.getElementById('g_starling').value) || 0;
+            state.globals.personal = parseFloat(document.getElementById('g_personal').value) || 0;
+            state.globals.capital = parseFloat(document.getElementById('g_capital').value) || 0;
+            state.globals.h_active = document.getElementById('h_active').checked;
+            state.globals.h_month = parseInt(document.getElementById('h_month').value);
+            state.globals.h_lha = parseFloat(document.getElementById('h_lha').value) || 0;
+            state.globals.h_rent = parseFloat(document.getElementById('h_rent').value) || 0;
+            
+            localStorage.setItem('lucid_v4_state', JSON.stringify(state));
         }
 
-        function loadState() {
-            const saved = localStorage.getItem('lucid_cfo_state');
-            if (saved) {
-                const state = JSON.parse(saved);
-                for (const id in state) {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        if (el.type === 'checkbox') {
-                            el.checked = state[id];
-                            const controls = document.getElementById('housing_controls');
-                            if(el.checked) controls.classList.remove('opacity-50');
-                            else controls.classList.add('opacity-50');
-                        } else {
-                            el.value = state[id];
-                        }
-                    }
-                }
-            }
+        function toggleLedger(apIndex) {
+            state.aps[apIndex].ledgerOpen = !state.aps[apIndex].ledgerOpen;
+            render();
         }
 
-        function init() {
+        // --- LEDGER MUTATIONS ---
+        function addIncome(apIndex) { state.aps[apIndex].incomes.push({desc: "", customer: "", amount: 0}); render(); }
+        function removeIncome(apIndex, idx) { state.aps[apIndex].incomes.splice(idx, 1); render(); }
+        function updateIncome(apIndex, idx, field, val) { state.aps[apIndex].incomes[idx][field] = field === 'amount' ? (parseFloat(val)||0) : val; saveAndCalc(); }
+
+        function addExpense(apIndex) { state.aps[apIndex].expenses.push({desc: "", vendor: "", cat: dwpCategories[0], amount: 0}); render(); }
+        function removeExpense(apIndex, idx) { state.aps[apIndex].expenses.splice(idx, 1); render(); }
+        function updateExpense(apIndex, idx, field, val) { state.aps[apIndex].expenses[idx][field] = field === 'amount' ? (parseFloat(val)||0) : val; saveAndCalc(); }
+
+        function updateAPVal(apIndex, field, val) { state.aps[apIndex][field] = parseFloat(val)||0; saveAndCalc(); }
+
+        function toggleHousing() {
+            const controls = document.getElementById('housing_controls');
+            if(document.getElementById('h_active').checked) controls.classList.remove('opacity-50');
+            else controls.classList.add('opacity-50');
+        }
+
+        function saveAndCalc() { saveState(); render(); }
+
+        // --- MAIN RENDER ENGINE ---
+        function render() {
+            // Restore UI globals
+            document.getElementById('g_starling').value = state.globals.starling;
+            document.getElementById('g_personal').value = state.globals.personal;
+            document.getElementById('g_capital').value = state.globals.capital;
+            document.getElementById('h_active').checked = state.globals.h_active;
+            document.getElementById('h_month').value = state.globals.h_month;
+            document.getElementById('h_lha').value = state.globals.h_lha;
+            document.getElementById('h_rent').value = state.globals.h_rent;
+            toggleHousing();
+
             const container = document.getElementById('ap-container');
             let html = '';
-
-            apData.forEach((ap, i) => {
-                html += `
-                <div class="bg-slate-900 rounded-lg border border-slate-800 shadow-sm relative">
-                    <div class="grid grid-cols-1 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-800">
-                        <div class="p-4">
-                            <div class="flex justify-between items-center mb-3">
-                                <h2 class="font-bold text-slate-200">${ap.month}</h2>
-                                <span id="loss_badge_${i}" class="text-[10px] font-bold px-2 py-0.5 rounded border"></span>
-                            </div>
-                            <label class="block text-xs text-slate-400 mb-1">Gross Income (£)</label>
-                            <input type="number" id="inc_${i}" value="${i === 0 ? 2080 : 1800}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-white text-sm mb-2" oninput="calculate()">
-                            <label class="block text-xs text-slate-400 mb-1">Personal Spend (Kids/Life)</label>
-                            <input type="number" id="pers_${i}" value="0" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-amber-200 text-sm" oninput="calculate()">
-                        </div>
-                        <div class="p-4">
-                            <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Business Exp.</h3>
-                            <input type="text" id="techName_${i}" value="${ap.tech}" class="w-full bg-transparent border-b border-slate-700 text-slate-300 text-xs mb-2 pb-1" oninput="calculate()">
-                            <label class="block text-xs text-slate-400 mb-1">Cost (£)</label>
-                            <input type="number" id="bizExp_${i}" value="${ap.exp}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-emerald-400 font-bold text-sm" oninput="calculate()">
-                        </div>
-                        <div class="p-4 bg-slate-800/20">
-                            <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Algorithm</h3>
-                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Net Profit:</span><span id="np_${i}" class="text-white font-medium"></span></div>
-                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500">Allowance Limit:</span><span id="wa_${i}" class="text-slate-500"></span></div>
-                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500">Max UC Allowed:</span><span id="maxUc_${i}" class="text-indigo-400"></span></div>
-                            <div class="flex justify-between text-xs mb-2"><span class="text-slate-400">- 55% Deduction:</span><span id="ded_${i}" class="text-rose-400"></span></div>
-                            <div class="flex justify-between text-sm font-bold border-t border-slate-700 pt-1">
-                                <span class="text-slate-300">Final UC Paid:</span><span id="ucPaid_${i}" class="text-emerald-400"></span>
-                            </div>
-                            <div id="taper_status_${i}" class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded"></div>
-                        </div>
-                        <div class="p-4" id="rent_col_${i}">
-                            <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Housing Reality</h3>
-                            <div id="rent_data_${i}"></div>
-                        </div>
-                        <div class="p-4 bg-slate-800/40">
-                            <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">End Balances</h3>
-                            <div class="mb-2"><span class="block text-xs text-slate-400">Biz (Starling)</span><span id="bal_biz_${i}" class="text-lg font-bold text-white"></span></div>
-                            <div><span class="block text-xs text-slate-400">Personal (NatWest)</span><div id="bal_pers_${i}"></div></div>
-                        </div>
-                    </div>
-                </div>
-                `;
-            });
-
-            container.innerHTML = html;
-            
-            document.getElementById('h_active').addEventListener('change', function() {
-                const controls = document.getElementById('housing_controls');
-                if(this.checked) controls.classList.remove('opacity-50');
-                else controls.classList.add('opacity-50');
-                calculate();
-            });
-
-            loadState();
-            calculate();
-        }
-
-        function calculate() {
-            const startBiz = parseFloat(document.getElementById('g_starling').value) || 0;
-            const startPers = parseFloat(document.getElementById('g_personal').value) || 0;
-            const capIntro = parseFloat(document.getElementById('g_capital').value) || 0;
-            
-            const isRenting = document.getElementById('h_active').checked;
-            const rentMonthIndex = parseInt(document.getElementById('h_month').value);
-            const lhaRate = parseFloat(document.getElementById('h_lha').value) || 0;
-            const actualRent = parseFloat(document.getElementById('h_rent').value) || 0;
 
             const baseUC = 1051.00;
             const waHigh = 710.00;
             const waLow = 404.00;
 
-            let curBiz = startBiz + capIntro;
-            let curPers = startPers - capIntro;
+            let curBiz = state.globals.starling + state.globals.capital;
+            let curPers = state.globals.personal - state.globals.capital;
             let lossCF = 0;
 
-            let totTech = 0, totUC = 0, totShortfall = 0;
+            state.aps.forEach((ap, i) => {
+                // Calculate Totals
+                let totalInc = ap.incomes.reduce((sum, item) => sum + item.amount, 0);
+                let totalExp = ap.expenses.reduce((sum, item) => sum + item.amount, 0);
 
-            for (let i = 0; i < 12; i++) {
-                let inc = parseFloat(document.getElementById(`inc_${i}`).value) || 0;
-                let bizExp = parseFloat(document.getElementById(`bizExp_${i}`).value) || 0;
-                let persExp = parseFloat(document.getElementById(`pers_${i}`).value) || 0;
-
-                let isRentingThisMonth = isRenting && (i >= rentMonthIndex);
+                // Math Engine
+                let isRenting = state.globals.h_active && (i >= state.globals.h_month);
+                let housingSub = isRenting ? Math.min(state.globals.h_rent, state.globals.h_lha) : 0;
+                let rentShortfall = isRenting ? Math.max(0, state.globals.h_rent - housingSub) : 0;
                 
-                let housingElement = isRentingThisMonth ? Math.min(actualRent, lhaRate) : 0;
-                let rentShortfall = isRentingThisMonth ? Math.max(0, actualRent - housingElement) : 0;
-                
-                let curWA = isRentingThisMonth ? waLow : waHigh;
-                let curMaxUC = baseUC + housingElement;
+                let curWA = isRenting ? waLow : waHigh;
+                let curMaxUC = baseUC + housingSub;
 
-                let netProfit = inc - bizExp;
+                let netProfit = totalInc - totalExp; // DRAWINGS DO NOT REDUCE PROFIT
                 let adjProfit = Math.max(0, netProfit - lossCF);
                 let newLossCF = netProfit - lossCF < 0 ? Math.abs(netProfit - lossCF) : 0;
 
                 let deduction = Math.max(0, (adjProfit - curWA) * 0.55);
                 let finalUC = Math.max(0, curMaxUC - deduction);
 
-                curBiz = curBiz + inc - bizExp;
-                curPers = curPers + finalUC - persExp - rentShortfall;
+                // Apply Cash Moves
+                curBiz = curBiz + totalInc - totalExp - ap.drawings; 
+                curPers = curPers + finalUC - ap.persExp - rentShortfall + ap.drawings;
 
-                totTech += bizExp;
-                totUC += finalUC;
-                totShortfall += rentShortfall;
+                // Build Category Options
+                const catOptions = dwpCategories.map(c => `<option value="${c}">${c}</option>`).join('');
 
-                let lBadge = document.getElementById(`loss_badge_${i}`);
-                if (newLossCF > 0) { lBadge.textContent = `Carrying Loss: ${fmt(newLossCF)}`; lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-rose-950/40 text-rose-400 border border-rose-900"; }
-                else if (lossCF > 0) { lBadge.textContent = `Absorbed Prev Loss`; lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900"; }
-                else { lBadge.textContent = "Clean Period"; lBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700"; }
+                // Build HTML
+                html += `
+                <div class="bg-slate-900 rounded-lg border border-slate-800 shadow-sm overflow-hidden">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-slate-800 bg-slate-900 relative">
+                        
+                        <div class="p-4 flex flex-col justify-center bg-slate-800/20">
+                            <h2 class="font-bold text-slate-200 text-lg mb-1">${ap.monthName}</h2>
+                            <button onclick="toggleLedger(${i})" class="text-xs w-full py-1.5 rounded border border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10 transition-colors">
+                                ${ap.ledgerOpen ? 'Close Ledger' : 'Manage Ledger Data'}
+                            </button>
+                        </div>
 
-                // --- NEW UI UPDATES FOR CLARITY ---
-                document.getElementById(`np_${i}`).textContent = fmt(adjProfit);
-                document.getElementById(`wa_${i}`).textContent = fmt(curWA);
-                document.getElementById(`maxUc_${i}`).textContent = fmt(curMaxUC);
-                document.getElementById(`ded_${i}`).textContent = `-${fmt(deduction)}`;
-                document.getElementById(`ucPaid_${i}`).textContent = fmt(finalUC);
+                        <div class="p-4">
+                            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Business Cashflow</h3>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Income:</span><span class="text-white">${fmt(totalInc)}</span></div>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Expenses:</span><span class="text-emerald-400">-${fmt(totalExp)}</span></div>
+                            <div class="flex justify-between text-xs pt-1 border-t border-slate-800 mt-1"><span class="text-slate-400">Net Profit:</span><span class="font-bold text-white">${fmt(netProfit)}</span></div>
+                        </div>
 
-                let tStatus = document.getElementById(`taper_status_${i}`);
-                if (deduction > 0) { tStatus.textContent = "⚠️ 55% TAPER ACTIVE"; tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-rose-950/40 text-rose-400 border border-rose-900"; }
-                else if (adjProfit === 0 && lossCF > 0) { tStatus.textContent = "🛡️ SHIELDED BY LOSSES"; tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-indigo-950/40 text-indigo-400 border border-indigo-900"; }
-                else if (adjProfit <= curWA) { tStatus.textContent = "🛡️ SHIELDED BY ALLOWANCE"; tStatus.className = "mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900"; }
+                        <div class="p-4">
+                            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Personal Transfers</h3>
+                            <div class="mb-2">
+                                <label class="block text-[10px] text-slate-400 mb-0.5">Drawings (Biz to Pers) £</label>
+                                <input type="number" value="${ap.drawings}" onchange="updateAPVal(${i}, 'drawings', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-indigo-300 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-400 mb-0.5">Personal Spend £</label>
+                                <input type="number" value="${ap.persExp}" onchange="updateAPVal(${i}, 'persExp', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-amber-300 text-xs">
+                            </div>
+                        </div>
 
-                let rentUI = document.getElementById(`rent_data_${i}`);
-                let rentCol = document.getElementById(`rent_col_${i}`);
-                if (isRentingThisMonth) {
-                    rentCol.classList.add('bg-rose-950/20');
-                    rentUI.innerHTML = `<div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Actual Rent:</span><span class="text-white">${fmt(actualRent)}</span></div><div class="flex justify-between text-xs mb-1"><span class="text-slate-400">UC Housing Sub:</span><span class="text-emerald-400">-${fmt(housingElement)}</span></div>${actualRent > lhaRate ? `<div class="text-[10px] text-rose-400 text-right mb-1">Capped at LHA limit</div>` : ''}<div class="flex justify-between text-sm font-bold border-t border-rose-900/50 pt-1 mt-1"><span class="text-rose-400">You Pay (Shortfall):</span><span class="text-rose-400">${fmt(rentShortfall)}</span></div>`;
-                } else {
-                    rentCol.classList.remove('bg-rose-950/20');
-                    rentUI.innerHTML = `<div class="text-xs text-slate-500 italic mt-4">No Rent Obligations</div>`;
-                }
+                        <div class="p-4 bg-slate-800/30">
+                            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">UC Algorithm</h3>
+                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500">Allow Limit:</span><span class="text-slate-500">${fmt(curWA)}</span></div>
+                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-400">Max UC:</span><span class="text-indigo-400">${fmt(curMaxUC)}</span></div>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">55% Deduction:</span><span class="text-rose-400">-${fmt(deduction)}</span></div>
+                            <div class="flex justify-between text-sm font-bold border-t border-slate-700 pt-1">
+                                <span class="text-slate-300">UC Paid:</span><span class="text-emerald-400">${fmt(finalUC)}</span>
+                            </div>
+                        </div>
 
-                document.getElementById(`bal_biz_${i}`).textContent = fmt(curBiz);
-                let pBal = document.getElementById(`bal_pers_${i}`);
-                if (curPers >= 6000) { pBal.innerHTML = `<span class="text-lg font-bold text-rose-500">${fmt(curPers)}</span> <span class="text-[10px] bg-rose-900 text-white px-1 rounded ml-1">OVER £6K</span>`; }
-                else { pBal.innerHTML = `<span class="text-lg font-bold text-emerald-400">${fmt(curPers)}</span>`; }
+                        <div class="p-4 md:col-span-2 bg-slate-950 flex flex-col justify-center">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-xs text-slate-400">Starling Balance:</span>
+                                <span class="text-lg font-bold text-white">${fmt(curBiz)}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-400">Personal Savings:</span>
+                                <div class="text-right">
+                                    ${curPers >= 6000 
+                                        ? `<span class="text-lg font-black text-rose-500">${fmt(curPers)}</span><br><span class="text-[9px] bg-rose-900 text-white px-1 rounded uppercase">Over £6k Limit</span>` 
+                                        : `<span class="text-lg font-black text-emerald-400">${fmt(curPers)}</span>`
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
+                    ${ap.ledgerOpen ? `
+                    <div class="border-t border-indigo-900/50 bg-slate-900/80 p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="text-xs font-bold text-indigo-400">Income Ledger</h4>
+                                    <button onclick="addIncome(${i})" class="text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded">+ Add Row</button>
+                                </div>
+                                <div class="space-y-2">
+                                    ${ap.incomes.length === 0 ? '<div class="text-xs text-slate-600 italic">No income recorded.</div>' : ''}
+                                    ${ap.incomes.map((inc, idx) => `
+                                    <div class="ledger-row grid grid-cols-[3fr_2fr_100px_auto] gap-2 items-center">
+                                        <input type="text" placeholder="Desc (e.g. Inv 246)" value="${inc.desc}" onchange="updateIncome(${i}, ${idx}, 'desc', this.value)">
+                                        <input type="text" placeholder="Customer" value="${inc.customer}" onchange="updateIncome(${i}, ${idx}, 'customer', this.value)">
+                                        <input type="number" placeholder="£" value="${inc.amount}" onchange="updateIncome(${i}, ${idx}, 'amount', this.value)" class="text-emerald-400 font-bold">
+                                        <button onclick="removeIncome(${i}, ${idx})" class="text-rose-500 hover:text-rose-400 text-sm">×</button>
+                                    </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="text-xs font-bold text-rose-400">Expense Ledger</h4>
+                                    <button onclick="addExpense(${i})" class="text-[10px] bg-rose-900 hover:bg-rose-800 text-white px-2 py-1 rounded">+ Add Row</button>
+                                </div>
+                                <div class="space-y-2">
+                                    ${ap.expenses.length === 0 ? '<div class="text-xs text-slate-600 italic">No expenses recorded.</div>' : ''}
+                                    ${ap.expenses.map((exp, idx) => `
+                                    <div class="ledger-row grid grid-cols-[2fr_2fr_3fr_100px_auto] gap-2 items-center">
+                                        <input type="text" placeholder="Desc (e.g. Laptop)" value="${exp.desc}" onchange="updateExpense(${i}, ${idx}, 'desc', this.value)">
+                                        <input type="text" placeholder="Vendor" value="${exp.vendor}" onchange="updateExpense(${i}, ${idx}, 'vendor', this.value)">
+                                        <select onchange="updateExpense(${i}, ${idx}, 'cat', this.value)">
+                                            ${dwpCategories.map(c => `<option value="${c}" ${exp.cat === c ? 'selected' : ''}>${c}</option>`).join('')}
+                                        </select>
+                                        <input type="number" placeholder="£" value="${exp.amount}" onchange="updateExpense(${i}, ${idx}, 'amount', this.value)" class="text-rose-400 font-bold">
+                                        <button onclick="removeExpense(${i}, ${idx})" class="text-rose-500 hover:text-rose-400 text-sm">×</button>
+                                    </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+                `;
                 lossCF = newLossCF;
-            }
+            });
 
-            document.getElementById('tot_tech').textContent = fmt(totTech);
-            document.getElementById('tot_uc').textContent = fmt(totUC);
-            document.getElementById('tot_shortfall').textContent = fmt(totShortfall);
-            document.getElementById('tot_pers').textContent = fmt(curPers);
-            document.getElementById('tot_pers').className = curPers >= 6000 ? "text-2xl font-black text-rose-500" : "text-2xl font-black text-white";
-
-            saveState();
+            container.innerHTML = html;
         }
 
-        document.addEventListener('DOMContentLoaded', init);
+        // --- EXPORT TO CSV FUNCTIONALITY ---
+        function exportReport() {
+            // Prompt user for which AP to export
+            let apOptions = state.aps.map((ap, i) => `${i+1}: ${ap.monthName}`).join("\\n");
+            let apChoice = prompt(`Enter the number (1-12) of the Assessment Period to export:\\n\\n${apOptions}`);
+            
+            let apIndex = parseInt(apChoice) - 1;
+            if (isNaN(apIndex) || apIndex < 0 || apIndex > 11) {
+                if(apChoice !== null) alert("Invalid selection.");
+                return;
+            }
+
+            let ap = state.aps[apIndex];
+            
+            // Build CSV Content
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += `Universal Credit Report - ${ap.monthName}\r\n\r\n`;
+            
+            // Income Section
+            csvContent += "INCOME\r\n";
+            csvContent += "Description,Customer,Amount\r\n";
+            let totalInc = 0;
+            ap.incomes.forEach(inc => {
+                csvContent += `"${inc.desc}","${inc.customer}",${inc.amount}\r\n`;
+                totalInc += inc.amount;
+            });
+            csvContent += `,,TOTAL INCOME:,${totalInc}\r\n\r\n`;
+
+            // Expenses Section
+            csvContent += "EXPENSES\r\n";
+            csvContent += "Category,Description,Vendor,Amount\r\n";
+            let totalExp = 0;
+            ap.expenses.forEach(exp => {
+                csvContent += `"${exp.cat}","${exp.desc}","${exp.vendor}",${exp.amount}\r\n`;
+                totalExp += exp.amount;
+            });
+            csvContent += `,,,TOTAL EXPENSES:,${totalExp}\r\n\r\n`;
+
+            // Summary
+            csvContent += "SUMMARY\r\n";
+            csvContent += `Reported Net Profit,${totalInc - totalExp}\r\n`;
+            csvContent += `Cash Drawings (Personal Transfers),${ap.drawings}\r\n`;
+
+            // Trigger Download
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Lucidelusion_UC_Report_${ap.monthName.replace(/\s+/g, '_')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Initial Boot
+        render();
     </script>
 </body>
 </html>
