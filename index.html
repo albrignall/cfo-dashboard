@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucidelusion ERP & UC Reporter V4.0</title>
+    <title>Lucidelusion ERP & UC Reporter V4.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         ::-webkit-scrollbar { width: 8px; }
@@ -18,22 +18,22 @@
     <div class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-xl">
         <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| ERP V4.0</span></h1>
-                <p class="text-xs text-slate-400 mt-1">Dynamic Ledgers, DWP Reporting & Cash Drawings</p>
+                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| ERP V4.1</span></h1>
+                <p class="text-xs text-slate-400 mt-1">Full Precision Ledgers & Visual Shield Status</p>
             </div>
             
             <div class="flex gap-4 text-xs bg-slate-950 p-3 rounded border border-slate-800">
                 <div>
                     <label class="block text-slate-500 mb-1">Starting Biz (£)</label>
-                    <input type="number" id="g_starling" value="2031.74" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="saveAndCalc()">
+                    <input type="number" step="0.01" id="g_starling" value="1959.01" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="saveAndCalc()">
                 </div>
                 <div>
                     <label class="block text-slate-500 mb-1">Starting Pers. (£)</label>
-                    <input type="number" id="g_personal" value="4843.11" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="saveAndCalc()">
+                    <input type="number" step="0.01" id="g_personal" value="5177.30" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="saveAndCalc()">
                 </div>
                 <div>
                     <label class="block text-slate-500 mb-1">Capital Intro (£)</label>
-                    <input type="number" id="g_capital" value="4500.00" class="w-24 bg-slate-800 border border-emerald-900 rounded px-2 py-1 text-emerald-400" oninput="saveAndCalc()">
+                    <input type="number" step="0.01" id="g_capital" value="4000.00" class="w-24 bg-slate-800 border border-emerald-900 rounded px-2 py-1 text-emerald-400" oninput="saveAndCalc()">
                 </div>
             </div>
         </div>
@@ -57,7 +57,7 @@
                         </select>
                     </div>
                     <div>
-                        <input type="number" id="h_rent" value="2800" placeholder="Actual Rent" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-rose-400 font-bold text-xs" oninput="saveAndCalc()">
+                        <input type="number" step="0.01" id="h_rent" value="2800" placeholder="Actual Rent" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-rose-400 font-bold text-xs" oninput="saveAndCalc()">
                     </div>
                 </div>
             </div>
@@ -90,7 +90,7 @@
 
         // Default Data Template
         const defaultState = {
-            globals: { starling: 2031.74, personal: 4843.11, capital: 4500, h_active: false, h_month: 5, h_lha: 1621, h_rent: 2800 },
+            globals: { starling: 1959.01, personal: 5177.30, capital: 4000.00, h_active: false, h_month: 5, h_lha: 1621, h_rent: 2800 },
             aps: Array(12).fill(null).map((_, i) => ({
                 monthName: `AP ${i+1}`,
                 incomes: i === 0 ? [{desc: "Pre-booked Client", customer: "Client A", amount: 2080}] : [],
@@ -101,11 +101,10 @@
             }))
         };
 
-        // Load State or Init
-        let state = JSON.parse(localStorage.getItem('lucid_v4_state')) || defaultState;
+        // Load State or Init (using new key for V4.1 to reset defaults)
+        let state = JSON.parse(localStorage.getItem('lucid_v41_state')) || defaultState;
 
         function saveState() {
-            // Update globals from UI
             state.globals.starling = parseFloat(document.getElementById('g_starling').value) || 0;
             state.globals.personal = parseFloat(document.getElementById('g_personal').value) || 0;
             state.globals.capital = parseFloat(document.getElementById('g_capital').value) || 0;
@@ -114,7 +113,7 @@
             state.globals.h_lha = parseFloat(document.getElementById('h_lha').value) || 0;
             state.globals.h_rent = parseFloat(document.getElementById('h_rent').value) || 0;
             
-            localStorage.setItem('lucid_v4_state', JSON.stringify(state));
+            localStorage.setItem('lucid_v41_state', JSON.stringify(state));
         }
 
         function toggleLedger(apIndex) {
@@ -122,7 +121,6 @@
             render();
         }
 
-        // --- LEDGER MUTATIONS ---
         function addIncome(apIndex) { state.aps[apIndex].incomes.push({desc: "", customer: "", amount: 0}); render(); }
         function removeIncome(apIndex, idx) { state.aps[apIndex].incomes.splice(idx, 1); render(); }
         function updateIncome(apIndex, idx, field, val) { state.aps[apIndex].incomes[idx][field] = field === 'amount' ? (parseFloat(val)||0) : val; saveAndCalc(); }
@@ -141,9 +139,7 @@
 
         function saveAndCalc() { saveState(); render(); }
 
-        // --- MAIN RENDER ENGINE ---
         function render() {
-            // Restore UI globals
             document.getElementById('g_starling').value = state.globals.starling;
             document.getElementById('g_personal').value = state.globals.personal;
             document.getElementById('g_capital').value = state.globals.capital;
@@ -165,11 +161,9 @@
             let lossCF = 0;
 
             state.aps.forEach((ap, i) => {
-                // Calculate Totals
                 let totalInc = ap.incomes.reduce((sum, item) => sum + item.amount, 0);
                 let totalExp = ap.expenses.reduce((sum, item) => sum + item.amount, 0);
 
-                // Math Engine
                 let isRenting = state.globals.h_active && (i >= state.globals.h_month);
                 let housingSub = isRenting ? Math.min(state.globals.h_rent, state.globals.h_lha) : 0;
                 let rentShortfall = isRenting ? Math.max(0, state.globals.h_rent - housingSub) : 0;
@@ -177,28 +171,44 @@
                 let curWA = isRenting ? waLow : waHigh;
                 let curMaxUC = baseUC + housingSub;
 
-                let netProfit = totalInc - totalExp; // DRAWINGS DO NOT REDUCE PROFIT
+                let netProfit = totalInc - totalExp; 
                 let adjProfit = Math.max(0, netProfit - lossCF);
                 let newLossCF = netProfit - lossCF < 0 ? Math.abs(netProfit - lossCF) : 0;
 
                 let deduction = Math.max(0, (adjProfit - curWA) * 0.55);
                 let finalUC = Math.max(0, curMaxUC - deduction);
 
-                // Apply Cash Moves
                 curBiz = curBiz + totalInc - totalExp - ap.drawings; 
                 curPers = curPers + finalUC - ap.persExp - rentShortfall + ap.drawings;
 
-                // Build Category Options
-                const catOptions = dwpCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+                // VISUALS: Generate Badges based on calculations
+                let lossBadgeHtml = '';
+                if (newLossCF > 0) {
+                    lossBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-950/40 text-rose-400 border border-rose-900">Carrying Loss: ${fmt(newLossCF)}</span>`;
+                } else if (lossCF > 0) {
+                    lossBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900">Absorbed Prev Loss</span>`;
+                } else {
+                    lossBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700">Clean Period</span>`;
+                }
 
-                // Build HTML
+                let taperStatusHtml = '';
+                if (deduction > 0) {
+                    taperStatusHtml = `<div class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-rose-950/40 text-rose-400 border border-rose-900">⚠️ 55% TAPER ACTIVE</div>`;
+                } else if (adjProfit === 0 && lossCF > 0) {
+                    taperStatusHtml = `<div class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-indigo-950/40 text-indigo-400 border border-indigo-900">🛡️ SHIELDED BY LOSSES</div>`;
+                } else if (adjProfit <= curWA) {
+                    taperStatusHtml = `<div class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900">🛡️ SHIELDED BY ALLOWANCE</div>`;
+                }
+
                 html += `
                 <div class="bg-slate-900 rounded-lg border border-slate-800 shadow-sm overflow-hidden">
-                    
                     <div class="grid grid-cols-1 md:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-slate-800 bg-slate-900 relative">
                         
                         <div class="p-4 flex flex-col justify-center bg-slate-800/20">
-                            <h2 class="font-bold text-slate-200 text-lg mb-1">${ap.monthName}</h2>
+                            <div class="flex flex-col mb-3">
+                                <h2 class="font-bold text-slate-200 text-lg">${ap.monthName}</h2>
+                                <div class="mt-1">${lossBadgeHtml}</div>
+                            </div>
                             <button onclick="toggleLedger(${i})" class="text-xs w-full py-1.5 rounded border border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10 transition-colors">
                                 ${ap.ledgerOpen ? 'Close Ledger' : 'Manage Ledger Data'}
                             </button>
@@ -208,29 +218,31 @@
                             <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Business Cashflow</h3>
                             <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Income:</span><span class="text-white">${fmt(totalInc)}</span></div>
                             <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Expenses:</span><span class="text-emerald-400">-${fmt(totalExp)}</span></div>
-                            <div class="flex justify-between text-xs pt-1 border-t border-slate-800 mt-1"><span class="text-slate-400">Net Profit:</span><span class="font-bold text-white">${fmt(netProfit)}</span></div>
+                            <div class="flex justify-between text-xs pt-1 border-t border-slate-800 mt-1"><span class="text-slate-400">Raw Profit:</span><span class="font-bold text-white">${fmt(netProfit)}</span></div>
                         </div>
 
                         <div class="p-4">
                             <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Personal Transfers</h3>
                             <div class="mb-2">
                                 <label class="block text-[10px] text-slate-400 mb-0.5">Drawings (Biz to Pers) £</label>
-                                <input type="number" value="${ap.drawings}" onchange="updateAPVal(${i}, 'drawings', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-indigo-300 text-xs">
+                                <input type="number" step="0.01" value="${ap.drawings}" onchange="updateAPVal(${i}, 'drawings', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-indigo-300 text-xs">
                             </div>
                             <div>
                                 <label class="block text-[10px] text-slate-400 mb-0.5">Personal Spend £</label>
-                                <input type="number" value="${ap.persExp}" onchange="updateAPVal(${i}, 'persExp', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-amber-300 text-xs">
+                                <input type="number" step="0.01" value="${ap.persExp}" onchange="updateAPVal(${i}, 'persExp', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-amber-300 text-xs">
                             </div>
                         </div>
 
                         <div class="p-4 bg-slate-800/30">
                             <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">UC Algorithm</h3>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">DWP Adj Profit:</span><span class="text-white font-medium">${fmt(adjProfit)}</span></div>
                             <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500">Allow Limit:</span><span class="text-slate-500">${fmt(curWA)}</span></div>
                             <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-400">Max UC:</span><span class="text-indigo-400">${fmt(curMaxUC)}</span></div>
                             <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">55% Deduction:</span><span class="text-rose-400">-${fmt(deduction)}</span></div>
                             <div class="flex justify-between text-sm font-bold border-t border-slate-700 pt-1">
                                 <span class="text-slate-300">UC Paid:</span><span class="text-emerald-400">${fmt(finalUC)}</span>
                             </div>
+                            ${taperStatusHtml}
                         </div>
 
                         <div class="p-4 md:col-span-2 bg-slate-950 flex flex-col justify-center">
@@ -253,7 +265,6 @@
                     ${ap.ledgerOpen ? `
                     <div class="border-t border-indigo-900/50 bg-slate-900/80 p-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
                             <div>
                                 <div class="flex justify-between items-center mb-2">
                                     <h4 class="text-xs font-bold text-indigo-400">Income Ledger</h4>
@@ -265,7 +276,7 @@
                                     <div class="ledger-row grid grid-cols-[3fr_2fr_100px_auto] gap-2 items-center">
                                         <input type="text" placeholder="Desc (e.g. Inv 246)" value="${inc.desc}" onchange="updateIncome(${i}, ${idx}, 'desc', this.value)">
                                         <input type="text" placeholder="Customer" value="${inc.customer}" onchange="updateIncome(${i}, ${idx}, 'customer', this.value)">
-                                        <input type="number" placeholder="£" value="${inc.amount}" onchange="updateIncome(${i}, ${idx}, 'amount', this.value)" class="text-emerald-400 font-bold">
+                                        <input type="number" step="0.01" placeholder="£" value="${inc.amount}" onchange="updateIncome(${i}, ${idx}, 'amount', this.value)" class="text-emerald-400 font-bold">
                                         <button onclick="removeIncome(${i}, ${idx})" class="text-rose-500 hover:text-rose-400 text-sm">×</button>
                                     </div>
                                     `).join('')}
@@ -286,7 +297,7 @@
                                         <select onchange="updateExpense(${i}, ${idx}, 'cat', this.value)">
                                             ${dwpCategories.map(c => `<option value="${c}" ${exp.cat === c ? 'selected' : ''}>${c}</option>`).join('')}
                                         </select>
-                                        <input type="number" placeholder="£" value="${exp.amount}" onchange="updateExpense(${i}, ${idx}, 'amount', this.value)" class="text-rose-400 font-bold">
+                                        <input type="number" step="0.01" placeholder="£" value="${exp.amount}" onchange="updateExpense(${i}, ${idx}, 'amount', this.value)" class="text-rose-400 font-bold">
                                         <button onclick="removeExpense(${i}, ${idx})" class="text-rose-500 hover:text-rose-400 text-sm">×</button>
                                     </div>
                                     `).join('')}
@@ -304,9 +315,7 @@
             container.innerHTML = html;
         }
 
-        // --- EXPORT TO CSV FUNCTIONALITY ---
         function exportReport() {
-            // Prompt user for which AP to export
             let apOptions = state.aps.map((ap, i) => `${i+1}: ${ap.monthName}`).join("\\n");
             let apChoice = prompt(`Enter the number (1-12) of the Assessment Period to export:\\n\\n${apOptions}`);
             
@@ -318,11 +327,9 @@
 
             let ap = state.aps[apIndex];
             
-            // Build CSV Content
             let csvContent = "data:text/csv;charset=utf-8,";
             csvContent += `Universal Credit Report - ${ap.monthName}\r\n\r\n`;
             
-            // Income Section
             csvContent += "INCOME\r\n";
             csvContent += "Description,Customer,Amount\r\n";
             let totalInc = 0;
@@ -332,7 +339,6 @@
             });
             csvContent += `,,TOTAL INCOME:,${totalInc}\r\n\r\n`;
 
-            // Expenses Section
             csvContent += "EXPENSES\r\n";
             csvContent += "Category,Description,Vendor,Amount\r\n";
             let totalExp = 0;
@@ -342,12 +348,11 @@
             });
             csvContent += `,,,TOTAL EXPENSES:,${totalExp}\r\n\r\n`;
 
-            // Summary
             csvContent += "SUMMARY\r\n";
-            csvContent += `Reported Net Profit,${totalInc - totalExp}\r\n`;
+            let netProfit = totalInc - totalExp;
+            csvContent += `Reported Net Profit,${netProfit}\r\n`;
             csvContent += `Cash Drawings (Personal Transfers),${ap.drawings}\r\n`;
 
-            // Trigger Download
             let encodedUri = encodeURI(csvContent);
             let link = document.createElement("a");
             link.setAttribute("href", encodedUri);
@@ -357,7 +362,6 @@
             document.body.removeChild(link);
         }
 
-        // Initial Boot
         render();
     </script>
 </body>
