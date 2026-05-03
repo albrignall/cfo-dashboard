@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucidelusion ERP & UC Reporter V4.2</title>
+    <title>Lucidelusion ERP & UC Reporter V4.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         ::-webkit-scrollbar { width: 8px; }
@@ -11,237 +11,573 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         .ledger-row input, .ledger-row select { background: #020617; border: 1px solid #1e293b; color: #e2e8f0; font-size: 0.75rem; padding: 4px 6px; border-radius: 4px; }
         .ledger-row input:focus, .ledger-row select:focus { border-color: #10b981; outline: none; }
+        .ap-label-input { background: transparent; border: none; border-bottom: 1px dashed #475569; color: #e2e8f0; font-weight: 700; font-size: 1.125rem; width: 100%; outline: none; }
+        .ap-label-input:focus { border-bottom-color: #10b981; }
+        #export_modal { transition: opacity 0.15s; }
+        #export_modal.hidden { opacity: 0; pointer-events: none; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-200 font-sans min-h-screen pb-24">
 
+    <!-- ===== HEADER ===== -->
     <div class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-xl">
         <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| ERP V4.2</span></h1>
-                <p class="text-xs text-slate-400 mt-1">Live DWP Constants, Active Loss Shields & Capital Algorithms</p>
+                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| ERP V4.4</span></h1>
+                <p class="text-xs text-slate-400 mt-1">Live DWP Constants · Active Loss Shields · Offline State Sync</p>
             </div>
-            
-            <div class="flex flex-wrap gap-3 text-xs bg-slate-950 p-3 rounded border border-slate-800">
-                <div>
-                    <label class="block text-slate-500 mb-1">Starting Biz (£)</label>
-                    <input type="number" step="0.01" id="g_starling" value="1959.01" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="saveAndCalc()">
-                </div>
-                <div>
-                    <label class="block text-slate-500 mb-1">Starting Pers. (£)</label>
-                    <input type="number" step="0.01" id="g_personal" value="5553.48" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" oninput="saveAndCalc()">
-                </div>
-                <div>
-                    <label class="block text-slate-500 mb-1">Starting Loss (£)</label>
-                    <input type="number" step="0.01" id="g_loss_cf" value="858.24" class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-rose-400 font-bold" oninput="saveAndCalc()">
-                </div>
-                <div>
-                    <label class="block text-slate-500 mb-1">Capital Intro (£)</label>
-                    <input type="number" step="0.01" id="g_capital" value="4000.00" class="w-24 bg-slate-800 border border-emerald-900 rounded px-2 py-1 text-emerald-400" oninput="saveAndCalc()">
-                </div>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="exportJSON()" class="bg-slate-800 hover:bg-slate-700 text-xs text-indigo-400 font-bold py-1.5 px-3 rounded border border-indigo-900 transition-colors flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Save (.json)
+                </button>
+                <button onclick="document.getElementById('import_file').click()" class="bg-slate-800 hover:bg-slate-700 text-xs text-emerald-400 font-bold py-1.5 px-3 rounded border border-emerald-900 transition-colors flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    Load (.json)
+                </button>
+                <button onclick="confirmReset()" class="bg-slate-800 hover:bg-slate-700 text-xs text-rose-400 font-bold py-1.5 px-3 rounded border border-rose-900 transition-colors flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Reset
+                </button>
+                <input type="file" id="import_file" class="hidden" accept=".json" onchange="importJSON(event)">
             </div>
         </div>
 
         <div class="bg-slate-800/50 border-t border-slate-800 p-3">
-            <div class="max-w-7xl mx-auto px-6 flex flex-wrap gap-6 items-center">
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="h_active" class="w-4 h-4 accent-indigo-500" onchange="toggleHousing(); saveAndCalc()">
-                    <label class="font-bold text-indigo-400 uppercase tracking-wide text-xs">Enable Housing</label>
+            <div class="max-w-7xl mx-auto px-6 flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex flex-wrap gap-3 text-xs">
+                    <div>
+                        <label class="block text-slate-500 mb-1">Starting Biz (£)</label>
+                        <input type="number" step="0.01" id="g_starling" value="1959.01" class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" onchange="saveAndCalc()">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-1">Starting Pers. (£)</label>
+                        <input type="number" step="0.01" id="g_personal" value="5553.48" class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" onchange="saveAndCalc()">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-1">Starting Loss (£)</label>
+                        <input type="number" step="0.01" id="g_loss_cf" value="858.24" class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-rose-400 font-bold" onchange="saveAndCalc()">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-1">Capital Intro (£)</label>
+                        <input type="number" step="0.01" id="g_capital" value="4000.00" class="w-24 bg-slate-900 border border-emerald-900 rounded px-2 py-1 text-emerald-400" onchange="saveAndCalc()">
+                    </div>
                 </div>
-                <div class="flex gap-4 opacity-50 transition-opacity duration-300" id="housing_controls">
-                    <div>
-                        <select id="h_month" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs" onchange="saveAndCalc()">
-                            <option value="5">AP6 (Sep)</option><option value="6">AP7 (Oct)</option><option value="7">AP8 (Nov)</option>
-                            <option value="8">AP9 (Dec)</option><option value="9">AP10 (Jan)</option><option value="10">AP11 (Feb)</option><option value="11">AP12 (Mar)</option>
-                        </select>
+
+                <div class="flex flex-wrap gap-4 items-center">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="h_active" class="w-4 h-4 accent-indigo-500" onchange="toggleHousing(); saveAndCalc()">
+                        <label class="font-bold text-indigo-400 uppercase tracking-wide text-xs">Enable Housing</label>
                     </div>
-                    <div>
-                        <select id="h_lha" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs" onchange="saveAndCalc()">
-                            <option value="1621">2-Bed (LHA: £1621)</option><option value="2044">3-Bed (LHA: £2044)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <input type="number" step="0.01" id="h_rent" value="2800" placeholder="Actual Rent" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-rose-400 font-bold text-xs" oninput="saveAndCalc()">
+                    <div class="flex gap-2 opacity-50 transition-opacity duration-300" id="housing_controls">
+                        <div>
+                            <!-- FIX: Housing month now covers all 12 APs, not just AP6-12 -->
+                            <select id="h_month" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs" onchange="saveAndCalc()">
+                                <option value="0">AP1 (Apr)</option>
+                                <option value="1">AP2 (May)</option>
+                                <option value="2">AP3 (Jun)</option>
+                                <option value="3">AP4 (Jul)</option>
+                                <option value="4">AP5 (Aug)</option>
+                                <option value="5">AP6 (Sep)</option>
+                                <option value="6">AP7 (Oct)</option>
+                                <option value="7">AP8 (Nov)</option>
+                                <option value="8">AP9 (Dec)</option>
+                                <option value="9">AP10 (Jan)</option>
+                                <option value="10">AP11 (Feb)</option>
+                                <option value="11">AP12 (Mar)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="h_lha" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs" onchange="saveAndCalc()">
+                                <option value="1621">2-Bed (£1621)</option>
+                                <option value="2044">3-Bed (£2044)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="number" step="0.01" id="h_rent" value="2800" placeholder="Rent" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-rose-400 font-bold text-xs" onchange="saveAndCalc()">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- ===== ANNUAL SUMMARY PANEL ===== -->
     <div class="max-w-7xl mx-auto px-6 mt-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden mb-6">
+            <button onclick="toggleSummary()" class="w-full flex justify-between items-center p-4 hover:bg-slate-800/30 transition-colors group">
+                <div class="flex items-center gap-3">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <span class="text-sm font-bold text-slate-300 uppercase tracking-wide">Annual Summary</span>
+                </div>
+                <svg id="summary_chevron" class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="summary_panel" class="hidden border-t border-slate-800 p-4">
+                <div id="summary_content" class="summary-grid"></div>
+            </div>
+        </div>
+
         <div id="ap-container" class="space-y-6"></div>
     </div>
 
-    <div class="fixed bottom-6 right-6 z-50">
-        <button onclick="exportReport()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-full shadow-lg border border-indigo-400 flex items-center gap-2 transition-transform transform hover:scale-105">
+    <!-- ===== EXPORT MODAL ===== -->
+    <div id="export_modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="text-white font-bold text-lg">Export DWP Report</h3>
+                    <p class="text-slate-500 text-xs mt-0.5">Select an Assessment Period to export as CSV</p>
+                </div>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
+            </div>
+            <div id="export_ap_list" class="space-y-1.5 max-h-80 overflow-y-auto pr-1"></div>
+        </div>
+    </div>
+
+    <!-- ===== FLOATING EXPORT BUTTON ===== -->
+    <div class="fixed bottom-6 right-6 z-40">
+        <button onclick="openExportModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-full shadow-lg border border-indigo-400 flex items-center gap-2 transition-transform transform hover:scale-105">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Export DWP Report
+            Export DWP Report (CSV)
         </button>
     </div>
 
     <script>
         const fmt = (n) => '£' + n.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        
+
+        // Month labels for UK tax year (Apr = AP1 ... Mar = AP12)
+        const MONTH_LABELS = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+
         const dwpCategories = [
-            "Equipment & Hardware",
-            "Stock & Raw Materials",
-            "Software & Subscriptions",
-            "Marketing & PR",
-            "Admin & Professional Fees",
-            "Travel & Transport",
-            "Rent & Utilities (Business)"
+            "Equipment & Hardware", "Stock & Raw Materials", "Software & Subscriptions",
+            "Marketing & PR", "Admin & Professional Fees", "Travel & Transport", "Rent & Utilities (Business)"
         ];
 
-        // Default Data Template based on Verified PDF Data
+        const makeDefaultAPs = () => Array(12).fill(null).map((_, i) => ({
+            label: "",   // NEW: user-editable name, empty = use default
+            incomes: i === 0 ? [{desc: "Pre-booked Client", customer: "Client A", amount: 2080}] : [],
+            expenses: i === 0 ? [{desc: "RTX Laptop + Admin", vendor: "Overclockers", cat: "Equipment & Hardware", amount: 2819.88}] : [],
+            drawings: 0,
+            persExp: 0,
+            notes: "",   // NEW: per-AP notes
+            ledgerOpen: false
+        }));
+
         const defaultState = {
             globals: { starling: 1959.01, personal: 5553.48, capital: 4000.00, loss_cf: 858.24, h_active: false, h_month: 5, h_lha: 1621, h_rent: 2800 },
-            aps: Array(12).fill(null).map((_, i) => ({
-                monthName: `AP ${i+1}`,
-                incomes: i === 0 ? [{desc: "Pre-booked Client", customer: "Client A", amount: 2080}] : [],
-                expenses: i === 0 ? [{desc: "RTX Laptop + Admin", vendor: "Overclockers", cat: "Equipment & Hardware", amount: 2819.88}] : [],
-                drawings: 0,
-                persExp: 0,
-                ledgerOpen: false
-            }))
+            summaryOpen: false,
+            aps: makeDefaultAPs()
         };
 
-        let state = JSON.parse(localStorage.getItem('lucid_v42_state')) || defaultState;
+        let state = (() => {
+            try {
+                const stored = JSON.parse(localStorage.getItem('lucid_v42_state'));
+                if (stored && stored.globals && stored.aps) {
+                    // Migrate: add any missing fields to existing AP entries
+                    stored.aps = stored.aps.map(ap => ({
+                        label: ap.label || "",
+                        notes: ap.notes || "",
+                        // Legacy support: map old monthName to label if label is missing
+                        ...(ap.label === undefined && ap.monthName ? { label: ap.monthName.replace(/^AP\s*\d+\s*/, '').trim() } : {}),
+                        incomes: ap.incomes || [],
+                        expenses: ap.expenses || [],
+                        drawings: ap.drawings || 0,
+                        persExp: ap.persExp || 0,
+                        ledgerOpen: ap.ledgerOpen || false
+                    }));
+                    stored.summaryOpen = stored.summaryOpen || false;
+                    return stored;
+                }
+            } catch(e) {}
+            return JSON.parse(JSON.stringify(defaultState));
+        })();
+
+        // ===== STATE MANAGEMENT =====
 
         function saveState() {
             state.globals.starling = parseFloat(document.getElementById('g_starling').value) || 0;
             state.globals.personal = parseFloat(document.getElementById('g_personal').value) || 0;
-            state.globals.capital = parseFloat(document.getElementById('g_capital').value) || 0;
-            state.globals.loss_cf = parseFloat(document.getElementById('g_loss_cf').value) || 0;
+            state.globals.capital  = parseFloat(document.getElementById('g_capital').value)  || 0;
+            state.globals.loss_cf  = parseFloat(document.getElementById('g_loss_cf').value)  || 0;
             state.globals.h_active = document.getElementById('h_active').checked;
-            state.globals.h_month = parseInt(document.getElementById('h_month').value);
-            state.globals.h_lha = parseFloat(document.getElementById('h_lha').value) || 0;
-            state.globals.h_rent = parseFloat(document.getElementById('h_rent').value) || 0;
-            
+            state.globals.h_month  = parseInt(document.getElementById('h_month').value);
+            state.globals.h_lha    = parseFloat(document.getElementById('h_lha').value) || 0;
+            state.globals.h_rent   = parseFloat(document.getElementById('h_rent').value) || 0;
             localStorage.setItem('lucid_v42_state', JSON.stringify(state));
-        }
-
-        function toggleLedger(apIndex) {
-            state.aps[apIndex].ledgerOpen = !state.aps[apIndex].ledgerOpen;
-            render();
-        }
-
-        function addIncome(apIndex) { state.aps[apIndex].incomes.push({desc: "", customer: "", amount: 0}); render(); }
-        function removeIncome(apIndex, idx) { state.aps[apIndex].incomes.splice(idx, 1); render(); }
-        function updateIncome(apIndex, idx, field, val) { state.aps[apIndex].incomes[idx][field] = field === 'amount' ? (parseFloat(val)||0) : val; saveAndCalc(); }
-
-        function addExpense(apIndex) { state.aps[apIndex].expenses.push({desc: "", vendor: "", cat: dwpCategories[0], amount: 0}); render(); }
-        function removeExpense(apIndex, idx) { state.aps[apIndex].expenses.splice(idx, 1); render(); }
-        function updateExpense(apIndex, idx, field, val) { state.aps[apIndex].expenses[idx][field] = field === 'amount' ? (parseFloat(val)||0) : val; saveAndCalc(); }
-
-        function updateAPVal(apIndex, field, val) { state.aps[apIndex][field] = parseFloat(val)||0; saveAndCalc(); }
-
-        function toggleHousing() {
-            const controls = document.getElementById('housing_controls');
-            if(document.getElementById('h_active').checked) controls.classList.remove('opacity-50');
-            else controls.classList.add('opacity-50');
         }
 
         function saveAndCalc() { saveState(); render(); }
 
-        function render() {
-            document.getElementById('g_starling').value = state.globals.starling;
-            document.getElementById('g_personal').value = state.globals.personal;
-            document.getElementById('g_capital').value = state.globals.capital;
-            document.getElementById('g_loss_cf').value = state.globals.loss_cf;
-            document.getElementById('h_active').checked = state.globals.h_active;
-            document.getElementById('h_month').value = state.globals.h_month;
-            document.getElementById('h_lha').value = state.globals.h_lha;
-            document.getElementById('h_rent').value = state.globals.h_rent;
-            toggleHousing();
+        function confirmReset() {
+            if (confirm('Reset all data to defaults? This cannot be undone.')) {
+                state = JSON.parse(JSON.stringify(defaultState));
+                localStorage.setItem('lucid_v42_state', JSON.stringify(state));
+                render();
+            }
+        }
 
-            const container = document.getElementById('ap-container');
-            let html = '';
+        // ===== JSON IMPORT / EXPORT =====
 
-            // Verified V4.2 Constants from Live Document
+        function exportJSON() {
+            saveState();
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `lucidelusion_data_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && imported.globals && imported.aps) {
+                        state = imported;
+                        // Ensure migration fields exist
+                        state.aps = state.aps.map(ap => ({
+                            label: ap.label || "",
+                            notes: ap.notes || "",
+                            incomes: ap.incomes || [],
+                            expenses: ap.expenses || [],
+                            drawings: ap.drawings || 0,
+                            persExp: ap.persExp || 0,
+                            ledgerOpen: ap.ledgerOpen || false
+                        }));
+                        state.summaryOpen = state.summaryOpen || false;
+                        // BUG FIX: Save to localStorage FIRST, then render.
+                        // Do NOT call saveAndCalc() here — saveState() would read
+                        // stale DOM values and overwrite the imported globals.
+                        localStorage.setItem('lucid_v42_state', JSON.stringify(state));
+                        render(); // render() updates DOM from state (correct direction)
+                        showToast('✓ Data loaded successfully');
+                    } else {
+                        showToast('✗ Invalid backup file format', true);
+                    }
+                } catch (err) {
+                    showToast('✗ Error parsing JSON — file may be corrupted', true);
+                    console.error(err);
+                }
+                event.target.value = "";
+            };
+            reader.readAsText(file);
+        }
+
+        // ===== TOAST NOTIFICATION =====
+
+        function showToast(msg, isError = false) {
+            const existing = document.getElementById('toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.id = 'toast';
+            toast.className = `fixed top-20 right-6 z-50 text-xs font-bold px-4 py-2 rounded-lg shadow-xl border transition-all duration-300 ${isError ? 'bg-rose-900 border-rose-700 text-rose-100' : 'bg-emerald-900 border-emerald-700 text-emerald-100'}`;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ===== SUMMARY PANEL =====
+
+        let summaryOpen = false;
+        function toggleSummary() {
+            summaryOpen = !summaryOpen;
+            state.summaryOpen = summaryOpen;
+            document.getElementById('summary_panel').classList.toggle('hidden', !summaryOpen);
+            document.getElementById('summary_chevron').style.transform = summaryOpen ? 'rotate(180deg)' : '';
+            if (summaryOpen) renderSummary();
+        }
+
+        function renderSummary() {
+            const results = calculate();
+            const totalInc = results.reduce((s, r) => s + r.totalInc, 0);
+            const totalExp = results.reduce((s, r) => s + r.totalExp, 0);
+            const totalUC  = results.reduce((s, r) => s + r.finalUC,  0);
+            const totalDraw= results.reduce((s, r) => s + r.drawings, 0);
+            const last = results[results.length - 1];
+
+            const tiles = [
+                { label: 'Total Annual Income',   value: fmt(totalInc), color: 'text-white' },
+                { label: 'Total Annual Expenses',  value: fmt(totalExp), color: 'text-emerald-400' },
+                { label: 'Net Profit (Year)',       value: fmt(totalInc - totalExp), color: totalInc - totalExp >= 0 ? 'text-white' : 'text-rose-400' },
+                { label: 'Total UC Received',      value: fmt(totalUC),  color: 'text-indigo-400' },
+                { label: 'Total Drawings',          value: fmt(totalDraw), color: 'text-amber-400' },
+                { label: 'Final Biz Balance',       value: fmt(last.curBiz), color: 'text-white' },
+                { label: 'Final Personal Balance',  value: fmt(last.curPers), color: last.curPers > 6000 ? 'text-rose-400' : 'text-emerald-400' },
+                { label: 'Loss C/F at Year End',    value: fmt(last.lossCF), color: last.lossCF > 0 ? 'text-rose-400' : 'text-slate-500' },
+            ];
+
+            document.getElementById('summary_content').innerHTML = tiles.map(t => `
+                <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-3">
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wide mb-1">${t.label}</div>
+                    <div class="text-sm font-bold ${t.color}">${t.value}</div>
+                </div>
+            `).join('');
+        }
+
+        // ===== CORE CALCULATION ENGINE =====
+        // Separated from render so summary panel can reuse it.
+
+        function calculate() {
             const baseUC = 985.76;
             const waHigh = 684.00;
-            const waLow = 404.00;
-
+            const waLow  = 404.00;
             let curBiz = state.globals.starling + state.globals.capital;
             let curPers = state.globals.personal - state.globals.capital;
-            let lossCF = state.globals.loss_cf;
+            let lossCF  = state.globals.loss_cf;
+            const results = [];
 
             state.aps.forEach((ap, i) => {
-                let totalInc = ap.incomes.reduce((sum, item) => sum + item.amount, 0);
-                let totalExp = ap.expenses.reduce((sum, item) => sum + item.amount, 0);
-
-                let isRenting = state.globals.h_active && (i >= state.globals.h_month);
-                let housingSub = isRenting ? Math.min(state.globals.h_rent, state.globals.h_lha) : 0;
-                let rentShortfall = isRenting ? Math.max(0, state.globals.h_rent - housingSub) : 0;
-                
-                let curWA = isRenting ? waLow : waHigh;
-                let curMaxUC = baseUC + housingSub;
-
-                let netProfit = totalInc - totalExp; 
-                let adjProfit = Math.max(0, netProfit - lossCF);
-                let newLossCF = netProfit - lossCF < 0 ? Math.abs(netProfit - lossCF) : 0;
-
-                let deduction = Math.max(0, (adjProfit - curWA) * 0.55);
-
-                // DWP Step-Function Capital Penalty Algorithm
+                const totalInc = ap.incomes.reduce((s, x) => s + x.amount, 0);
+                const totalExp = ap.expenses.reduce((s, x) => s + x.amount, 0);
+                const isRenting = state.globals.h_active && (i >= state.globals.h_month);
+                const housingSub = isRenting ? Math.min(state.globals.h_rent, state.globals.h_lha) : 0;
+                const rentShortfall = isRenting ? Math.max(0, state.globals.h_rent - housingSub) : 0;
+                const curWA = isRenting ? waLow : waHigh;
+                const curMaxUC = baseUC + housingSub;
+                const netProfit = totalInc - totalExp;
+                const adjProfit = Math.max(0, netProfit - lossCF);
+                const newLossCF = (netProfit - lossCF) < 0 ? Math.abs(netProfit - lossCF) : 0;
+                const deduction = Math.max(0, (adjProfit - curWA) * 0.55);
                 let capitalPenalty = 0;
                 if (curPers > 6000) {
-                    let excessCapital = curPers - 6000;
-                    let steps = Math.ceil(excessCapital / 250);
-                    capitalPenalty = steps * 4.35;
+                    capitalPenalty = Math.ceil((curPers - 6000) / 250) * 4.35;
                 }
+                const finalUC = Math.max(0, curMaxUC - deduction - capitalPenalty);
+                const prevLossCF = lossCF;
 
-                let finalUC = Math.max(0, curMaxUC - deduction - capitalPenalty);
-
-                curBiz = curBiz + totalInc - totalExp - ap.drawings; 
+                curBiz = curBiz + totalInc - totalExp - ap.drawings;
                 curPers = curPers + finalUC - ap.persExp - rentShortfall + ap.drawings;
+                lossCF = newLossCF;
 
-                // Badges
-                let lossBadgeHtml = '';
-                if (newLossCF > 0) {
-                    lossBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-950/40 text-rose-400 border border-rose-900">Carrying Loss: ${fmt(newLossCF)}</span>`;
-                } else if (lossCF > 0) {
-                    lossBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900">Absorbed Prev Loss</span>`;
+                results.push({
+                    totalInc, totalExp, netProfit, adjProfit, finalUC, deduction,
+                    capitalPenalty, curBiz, curPers, lossCF, prevLossCF, newLossCF,
+                    curWA, curMaxUC, isRenting, housingSub, rentShortfall,
+                    drawings: ap.drawings
+                });
+            });
+            return results;
+        }
+
+        // ===== LEDGER OPERATIONS =====
+
+        function toggleLedger(i) { state.aps[i].ledgerOpen = !state.aps[i].ledgerOpen; render(); }
+
+        function addIncome(i)         { state.aps[i].incomes.push({desc:"",customer:"",amount:0}); render(); }
+        function removeIncome(i,idx)  { state.aps[i].incomes.splice(idx,1); render(); }
+        function updateIncome(i,idx,f,v) { state.aps[i].incomes[idx][f] = f==='amount'?(parseFloat(v)||0):v; saveAndCalc(); }
+
+        function addExpense(i)         { state.aps[i].expenses.push({desc:"",vendor:"",cat:dwpCategories[0],amount:0}); render(); }
+        function removeExpense(i,idx)  { state.aps[i].expenses.splice(idx,1); render(); }
+        function updateExpense(i,idx,f,v) { state.aps[i].expenses[idx][f] = f==='amount'?(parseFloat(v)||0):v; saveAndCalc(); }
+
+        function updateAPVal(i,f,v) { state.aps[i][f] = parseFloat(v)||0; saveAndCalc(); }
+        function updateAPLabel(i,v) { state.aps[i].label = v; saveState(); }
+        function updateAPNotes(i,v) { state.aps[i].notes = v; saveState(); }
+
+        // NEW: Copy income & expense rows from the previous period
+        function copyFromPrev(i) {
+            if (i === 0) return;
+            const prev = state.aps[i - 1];
+            if (prev.incomes.length === 0 && prev.expenses.length === 0) {
+                showToast('Previous period has no data to copy', true);
+                return;
+            }
+            if (state.aps[i].incomes.length > 0 || state.aps[i].expenses.length > 0) {
+                if (!confirm('This period already has data. Append rows from previous period?')) return;
+            }
+            state.aps[i].incomes  = [...state.aps[i].incomes,  ...prev.incomes.map(x => ({...x}))];
+            state.aps[i].expenses = [...state.aps[i].expenses, ...prev.expenses.map(x => ({...x}))];
+            render();
+            showToast(`✓ Copied ${prev.incomes.length} income + ${prev.expenses.length} expense rows`);
+        }
+
+        // ===== HOUSING TOGGLE =====
+
+        function toggleHousing() {
+            const active = document.getElementById('h_active').checked;
+            document.getElementById('housing_controls').classList.toggle('opacity-50', !active);
+        }
+
+        // ===== EXPORT MODAL =====
+
+        function openExportModal() {
+            const results = calculate();
+            const list = document.getElementById('export_ap_list');
+            list.innerHTML = state.aps.map((ap, i) => {
+                const r = results[i];
+                const label = ap.label || `AP${i+1} (${MONTH_LABELS[i]})`;
+                const hasData = ap.incomes.length > 0 || ap.expenses.length > 0;
+                return `
+                <button onclick="doExport(${i})" class="w-full text-left flex justify-between items-center px-3 py-2.5 rounded-lg border ${hasData ? 'border-slate-700 hover:border-indigo-500 hover:bg-indigo-500/10' : 'border-slate-800 opacity-40 cursor-default'} transition-colors group" ${!hasData ? 'disabled title="No data recorded"' : ''}>
+                    <div>
+                        <span class="text-sm font-bold text-slate-200">${label}</span>
+                        ${hasData ? `<span class="ml-2 text-[10px] text-slate-500">${ap.incomes.length} income · ${ap.expenses.length} expense rows</span>` : '<span class="ml-2 text-[10px] text-slate-600">No data</span>'}
+                    </div>
+                    <span class="text-xs font-bold text-emerald-400 ${hasData ? 'group-hover:text-white' : ''}">${hasData ? fmt(r.finalUC) + ' UC' : '—'}</span>
+                </button>`;
+            }).join('');
+            document.getElementById('export_modal').classList.remove('hidden');
+        }
+
+        function closeExportModal() {
+            document.getElementById('export_modal').classList.add('hidden');
+        }
+
+        // Close modal on backdrop click
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('export_modal');
+            if (e.target === modal) closeExportModal();
+        });
+
+        function doExport(i) {
+            const ap = state.aps[i];
+            const results = calculate();
+            const r = results[i];
+            const label = ap.label || `AP${i+1} (${MONTH_LABELS[i]})`;
+
+            let csv = `"Universal Credit Report — ${label}"\r\n\r\n`;
+
+            csv += "INCOME\r\nDescription,Customer,Amount (£)\r\n";
+            ap.incomes.forEach(x => { csv += `"${x.desc}","${x.customer}",${x.amount}\r\n`; });
+            csv += `,,Total Income,${r.totalInc}\r\n\r\n`;
+
+            csv += "EXPENSES\r\nCategory,Description,Vendor,Amount (£)\r\n";
+            ap.expenses.forEach(x => { csv += `"${x.cat}","${x.desc}","${x.vendor}",${x.amount}\r\n`; });
+            csv += `,,,Total Expenses,${r.totalExp}\r\n\r\n`;
+
+            csv += "SUMMARY\r\n";
+            csv += `Raw Net Profit,${r.netProfit}\r\n`;
+            csv += `Loss Carried In,${r.prevLossCF}\r\n`;
+            csv += `DWP Adjusted Profit,${r.adjProfit}\r\n`;
+            csv += `Work Allowance,${r.curWA}\r\n`;
+            csv += `55% Taper Deduction,${r.deduction}\r\n`;
+            csv += `Capital Penalty,${r.capitalPenalty}\r\n`;
+            csv += `Maximum UC,${r.curMaxUC}\r\n`;
+            csv += `UC Paid,${r.finalUC}\r\n`;
+            csv += `Drawings (Biz→Personal),${ap.drawings}\r\n`;
+            if (ap.notes) csv += `\r\nNotes,"${ap.notes}"\r\n`;
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Lucidelusion_UC_Report_${label.replace(/[\s\/]+/g,'_')}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            closeExportModal();
+            showToast(`✓ Exported ${label}`);
+        }
+
+        // ===== MAIN RENDER =====
+
+        function render() {
+            // Sync globals to DOM
+            document.getElementById('g_starling').value = state.globals.starling;
+            document.getElementById('g_personal').value = state.globals.personal;
+            document.getElementById('g_capital').value  = state.globals.capital;
+            document.getElementById('g_loss_cf').value  = state.globals.loss_cf;
+            document.getElementById('h_active').checked = state.globals.h_active;
+            document.getElementById('h_month').value    = state.globals.h_month;
+            document.getElementById('h_lha').value      = state.globals.h_lha;
+            document.getElementById('h_rent').value     = state.globals.h_rent;
+            toggleHousing();
+
+            // Sync summary panel state
+            if (state.summaryOpen !== summaryOpen) {
+                summaryOpen = state.summaryOpen;
+                document.getElementById('summary_panel').classList.toggle('hidden', !summaryOpen);
+                document.getElementById('summary_chevron').style.transform = summaryOpen ? 'rotate(180deg)' : '';
+            }
+            if (summaryOpen) renderSummary();
+
+            const results = calculate();
+            let html = '';
+            let prevLossCF = state.globals.loss_cf;
+
+            state.aps.forEach((ap, i) => {
+                const r = results[i];
+                const apDefaultLabel = `AP${i+1} (${MONTH_LABELS[i]})`;
+                const displayLabel = ap.label || apDefaultLabel;
+
+                // Loss badge
+                let lossBadge = '';
+                if (r.newLossCF > 0) {
+                    lossBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-950/40 text-rose-400 border border-rose-900">Carrying Loss: ${fmt(r.newLossCF)}</span>`;
+                } else if (prevLossCF > 0) {
+                    lossBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900">Absorbed Prev Loss</span>`;
                 } else {
-                    lossBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700">Clean Period</span>`;
+                    lossBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700">Clean Period</span>`;
                 }
 
-                let taperStatusHtml = '';
-                if (deduction > 0) {
-                    taperStatusHtml = `<div class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-rose-950/40 text-rose-400 border border-rose-900">⚠️ 55% TAPER ACTIVE</div>`;
-                } else if (adjProfit === 0 && lossCF > 0) {
-                    taperStatusHtml = `<div class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-indigo-950/40 text-indigo-400 border border-indigo-900">🛡️ SHIELDED BY LOSSES</div>`;
-                } else if (adjProfit <= curWA) {
-                    taperStatusHtml = `<div class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900">🛡️ SHIELDED BY ALLOWANCE</div>`;
+                // Taper status
+                let taperStatus = '';
+                if (r.deduction > 0) {
+                    taperStatus = `<div class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-rose-950/40 text-rose-400 border border-rose-900">⚠️ 55% TAPER ACTIVE</div>`;
+                } else if (r.adjProfit === 0 && prevLossCF > 0) {
+                    taperStatus = `<div class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-indigo-950/40 text-indigo-400 border border-indigo-900">🛡️ SHIELDED BY LOSSES</div>`;
+                } else if (r.adjProfit <= r.curWA) {
+                    taperStatus = `<div class="mt-2 text-[10px] text-center font-bold px-2 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900">🛡️ SHIELDED BY ALLOWANCE</div>`;
                 }
 
-                let capPenHtml = capitalPenalty > 0 ? `<div class="flex justify-between text-[10px] mb-1"><span class="text-rose-300 font-medium">Capital Penalty (>£6k):</span><span class="text-rose-400 font-bold">-${fmt(capitalPenalty)}</span></div>` : '';
+                const capPenHtml = r.capitalPenalty > 0
+                    ? `<div class="flex justify-between text-[10px] mb-1"><span class="text-rose-300 font-medium">Capital Penalty (>£6k):</span><span class="text-rose-400 font-bold">-${fmt(r.capitalPenalty)}</span></div>`
+                    : '';
+
+                const housingHtml = r.isRenting
+                    ? `<div class="flex justify-between text-[10px] mb-1"><span class="text-indigo-300">Housing Subsidy:</span><span class="text-indigo-400">+${fmt(r.housingSub)}</span></div>`
+                    : '';
 
                 html += `
                 <div class="bg-slate-900 rounded-lg border border-slate-800 shadow-sm overflow-hidden">
                     <div class="grid grid-cols-1 md:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-slate-800 bg-slate-900 relative">
-                        
-                        <div class="p-4 flex flex-col justify-center bg-slate-800/20">
-                            <div class="flex flex-col mb-3">
-                                <h2 class="font-bold text-slate-200 text-lg">${ap.monthName}</h2>
-                                <div class="mt-1">${lossBadgeHtml}</div>
+
+                        <!-- AP Name + Controls -->
+                        <div class="p-4 flex flex-col justify-between bg-slate-800/20">
+                            <div class="mb-3">
+                                <input
+                                    class="ap-label-input"
+                                    type="text"
+                                    value="${ap.label}"
+                                    placeholder="${apDefaultLabel}"
+                                    onchange="updateAPLabel(${i}, this.value)"
+                                    title="Click to rename this period"
+                                >
+                                <div class="mt-1.5">${lossBadge}</div>
                             </div>
-                            <button onclick="toggleLedger(${i})" class="text-xs w-full py-1.5 rounded border border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10 transition-colors">
-                                ${ap.ledgerOpen ? 'Close Ledger' : 'Manage Ledger Data'}
-                            </button>
+                            <div class="flex flex-col gap-1.5">
+                                <button onclick="toggleLedger(${i})" class="text-xs w-full py-1.5 rounded border border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10 transition-colors">
+                                    ${ap.ledgerOpen ? 'Close Ledger' : 'Manage Ledger'}
+                                </button>
+                                ${i > 0 ? `
+                                <button onclick="copyFromPrev(${i})" class="text-xs w-full py-1.5 rounded border border-slate-700 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors" title="Copy rows from AP${i} (${MONTH_LABELS[i-1]})">
+                                    ↑ Copy from Prev
+                                </button>` : ''}
+                            </div>
                         </div>
 
+                        <!-- Business Cashflow -->
                         <div class="p-4">
                             <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Business Cashflow</h3>
-                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Income:</span><span class="text-white">${fmt(totalInc)}</span></div>
-                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Expenses:</span><span class="text-emerald-400">-${fmt(totalExp)}</span></div>
-                            <div class="flex justify-between text-xs pt-1 border-t border-slate-800 mt-1"><span class="text-slate-400">Raw Profit:</span><span class="font-bold text-white">${fmt(netProfit)}</span></div>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Income:</span><span class="text-white">${fmt(r.totalInc)}</span></div>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Expenses:</span><span class="text-emerald-400">-${fmt(r.totalExp)}</span></div>
+                            <div class="flex justify-between text-xs pt-1 border-t border-slate-800 mt-1"><span class="text-slate-400">Raw Profit:</span><span class="font-bold ${r.netProfit < 0 ? 'text-rose-400' : 'text-white'}">${fmt(r.netProfit)}</span></div>
                         </div>
 
+                        <!-- Personal Transfers -->
                         <div class="p-4">
                             <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Personal Transfers</h3>
                             <div class="mb-2">
-                                <label class="block text-[10px] text-slate-400 mb-0.5">Drawings (Biz to Pers) £</label>
+                                <label class="block text-[10px] text-slate-400 mb-0.5">Drawings (Biz→Pers) £</label>
                                 <input type="number" step="0.01" value="${ap.drawings}" onchange="updateAPVal(${i}, 'drawings', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-indigo-300 text-xs">
                             </div>
                             <div>
@@ -250,39 +586,45 @@
                             </div>
                         </div>
 
+                        <!-- UC Algorithm -->
                         <div class="p-4 bg-slate-800/30">
                             <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">UC Algorithm</h3>
-                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">DWP Adj Profit:</span><span class="text-white font-medium">${fmt(adjProfit)}</span></div>
-                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500">Allow Limit:</span><span class="text-slate-500">${fmt(curWA)}</span></div>
-                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-400">Max UC:</span><span class="text-indigo-400">${fmt(curMaxUC)}</span></div>
-                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">55% Deduction:</span><span class="text-rose-400">-${fmt(deduction)}</span></div>
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">DWP Adj Profit:</span><span class="text-white font-medium">${fmt(r.adjProfit)}</span></div>
+                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500">Work Allowance:</span><span class="text-slate-500">${fmt(r.curWA)}</span></div>
+                            <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-400">Max UC:</span><span class="text-indigo-400">${fmt(r.curMaxUC)}</span></div>
+                            ${housingHtml}
+                            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">55% Deduction:</span><span class="text-rose-400">-${fmt(r.deduction)}</span></div>
                             ${capPenHtml}
                             <div class="flex justify-between text-sm font-bold border-t border-slate-700 pt-1">
-                                <span class="text-slate-300">UC Paid:</span><span class="text-emerald-400">${fmt(finalUC)}</span>
+                                <span class="text-slate-300">UC Paid:</span><span class="text-emerald-400">${fmt(r.finalUC)}</span>
                             </div>
-                            ${taperStatusHtml}
+                            ${taperStatus}
                         </div>
 
+                        <!-- Running Balances -->
                         <div class="p-4 md:col-span-2 bg-slate-950 flex flex-col justify-center">
                             <div class="flex justify-between items-center mb-3">
                                 <span class="text-xs text-slate-400">Starling Balance:</span>
-                                <span class="text-lg font-bold text-white">${fmt(curBiz)}</span>
+                                <span class="text-lg font-bold ${r.curBiz < 0 ? 'text-rose-400' : 'text-white'}">${fmt(r.curBiz)}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-xs text-slate-400">Personal Savings:</span>
                                 <div class="text-right">
-                                    ${curPers > 6000 
-                                        ? `<span class="text-lg font-black text-rose-500">${fmt(curPers)}</span><br><span class="text-[9px] bg-rose-900 text-white px-1 rounded uppercase">Over £6k Limit</span>` 
-                                        : `<span class="text-lg font-black text-emerald-400">${fmt(curPers)}</span>`
+                                    ${r.curPers > 6000
+                                        ? `<span class="text-lg font-black text-rose-500">${fmt(r.curPers)}</span><br><span class="text-[9px] bg-rose-900 text-white px-1 rounded uppercase">Over £6k Limit</span>`
+                                        : `<span class="text-lg font-black text-emerald-400">${fmt(r.curPers)}</span>`
                                     }
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Ledger Panel -->
                     ${ap.ledgerOpen ? `
                     <div class="border-t border-indigo-900/50 bg-slate-900/80 p-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+
+                            <!-- Income Ledger -->
                             <div>
                                 <div class="flex justify-between items-center mb-2">
                                     <h4 class="text-xs font-bold text-indigo-400">Income Ledger</h4>
@@ -292,15 +634,15 @@
                                     ${ap.incomes.length === 0 ? '<div class="text-xs text-slate-600 italic">No income recorded.</div>' : ''}
                                     ${ap.incomes.map((inc, idx) => `
                                     <div class="ledger-row grid grid-cols-[3fr_2fr_100px_auto] gap-2 items-center">
-                                        <input type="text" placeholder="Desc (e.g. Inv 246)" value="${inc.desc}" onchange="updateIncome(${i}, ${idx}, 'desc', this.value)">
-                                        <input type="text" placeholder="Customer" value="${inc.customer}" onchange="updateIncome(${i}, ${idx}, 'customer', this.value)">
-                                        <input type="number" step="0.01" placeholder="£" value="${inc.amount}" onchange="updateIncome(${i}, ${idx}, 'amount', this.value)" class="text-emerald-400 font-bold">
-                                        <button onclick="removeIncome(${i}, ${idx})" class="text-rose-500 hover:text-rose-400 text-sm">×</button>
-                                    </div>
-                                    `).join('')}
+                                        <input type="text" placeholder="Desc (e.g. Inv 246)" value="${inc.desc}" onchange="updateIncome(${i},${idx},'desc',this.value)">
+                                        <input type="text" placeholder="Customer" value="${inc.customer}" onchange="updateIncome(${i},${idx},'customer',this.value)">
+                                        <input type="number" step="0.01" placeholder="£" value="${inc.amount}" onchange="updateIncome(${i},${idx},'amount',this.value)" class="text-emerald-400 font-bold">
+                                        <button onclick="removeIncome(${i},${idx})" class="text-rose-500 hover:text-rose-400 text-sm font-bold">×</button>
+                                    </div>`).join('')}
                                 </div>
                             </div>
 
+                            <!-- Expense Ledger -->
                             <div>
                                 <div class="flex justify-between items-center mb-2">
                                     <h4 class="text-xs font-bold text-rose-400">Expense Ledger</h4>
@@ -310,76 +652,40 @@
                                     ${ap.expenses.length === 0 ? '<div class="text-xs text-slate-600 italic">No expenses recorded.</div>' : ''}
                                     ${ap.expenses.map((exp, idx) => `
                                     <div class="ledger-row grid grid-cols-[2fr_2fr_3fr_100px_auto] gap-2 items-center">
-                                        <input type="text" placeholder="Desc (e.g. Laptop)" value="${exp.desc}" onchange="updateExpense(${i}, ${idx}, 'desc', this.value)">
-                                        <input type="text" placeholder="Vendor" value="${exp.vendor}" onchange="updateExpense(${i}, ${idx}, 'vendor', this.value)">
-                                        <select onchange="updateExpense(${i}, ${idx}, 'cat', this.value)">
-                                            ${dwpCategories.map(c => `<option value="${c}" ${exp.cat === c ? 'selected' : ''}>${c}</option>`).join('')}
+                                        <input type="text" placeholder="Desc" value="${exp.desc}" onchange="updateExpense(${i},${idx},'desc',this.value)">
+                                        <input type="text" placeholder="Vendor" value="${exp.vendor}" onchange="updateExpense(${i},${idx},'vendor',this.value)">
+                                        <select onchange="updateExpense(${i},${idx},'cat',this.value)">
+                                            ${dwpCategories.map(c => `<option value="${c}" ${exp.cat===c?'selected':''}>${c}</option>`).join('')}
                                         </select>
-                                        <input type="number" step="0.01" placeholder="£" value="${exp.amount}" onchange="updateExpense(${i}, ${idx}, 'amount', this.value)" class="text-rose-400 font-bold">
-                                        <button onclick="removeExpense(${i}, ${idx})" class="text-rose-500 hover:text-rose-400 text-sm">×</button>
-                                    </div>
-                                    `).join('')}
+                                        <input type="number" step="0.01" placeholder="£" value="${exp.amount}" onchange="updateExpense(${i},${idx},'amount',this.value)" class="text-rose-400 font-bold">
+                                        <button onclick="removeExpense(${i},${idx})" class="text-rose-500 hover:text-rose-400 text-sm font-bold">×</button>
+                                    </div>`).join('')}
                                 </div>
                             </div>
+                        </div>
 
+                        <!-- Notes Field (NEW) -->
+                        <div class="border-t border-slate-800 pt-3">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Notes for this period</label>
+                            <textarea
+                                rows="2"
+                                placeholder="e.g. Invoice 247 outstanding, expecting payment next period..."
+                                class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-slate-300 text-xs resize-none focus:border-indigo-500 focus:outline-none"
+                                onchange="updateAPNotes(${i}, this.value)"
+                            >${ap.notes}</textarea>
                         </div>
                     </div>
                     ` : ''}
-                </div>
-                `;
-                lossCF = newLossCF;
+                </div>`;
+
+                prevLossCF = r.newLossCF;
             });
 
-            container.innerHTML = html;
+            document.getElementById('ap-container').innerHTML = html;
         }
 
-        function exportReport() {
-            let apOptions = state.aps.map((ap, i) => `${i+1}: ${ap.monthName}`).join("\\n");
-            let apChoice = prompt(`Enter the number (1-12) of the Assessment Period to export:\\n\\n${apOptions}`);
-            
-            let apIndex = parseInt(apChoice) - 1;
-            if (isNaN(apIndex) || apIndex < 0 || apIndex > 11) {
-                if(apChoice !== null) alert("Invalid selection.");
-                return;
-            }
-
-            let ap = state.aps[apIndex];
-            
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += `Universal Credit Report - ${ap.monthName}\r\n\r\n`;
-            
-            csvContent += "INCOME\r\n";
-            csvContent += "Description,Customer,Amount\r\n";
-            let totalInc = 0;
-            ap.incomes.forEach(inc => {
-                csvContent += `"${inc.desc}","${inc.customer}",${inc.amount}\r\n`;
-                totalInc += inc.amount;
-            });
-            csvContent += `,,TOTAL INCOME:,${totalInc}\r\n\r\n`;
-
-            csvContent += "EXPENSES\r\n";
-            csvContent += "Category,Description,Vendor,Amount\r\n";
-            let totalExp = 0;
-            ap.expenses.forEach(exp => {
-                csvContent += `"${exp.cat}","${exp.desc}","${exp.vendor}",${exp.amount}\r\n`;
-                totalExp += exp.amount;
-            });
-            csvContent += `,,,TOTAL EXPENSES:,${totalExp}\r\n\r\n`;
-
-            csvContent += "SUMMARY\r\n";
-            let netProfit = totalInc - totalExp;
-            csvContent += `Reported Net Profit,${netProfit}\r\n`;
-            csvContent += `Cash Drawings (Personal Transfers),${ap.drawings}\r\n`;
-
-            let encodedUri = encodeURI(csvContent);
-            let link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Lucidelusion_UC_Report_${ap.monthName.replace(/\s+/g, '_')}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
+        // ===== INIT =====
+        summaryOpen = state.summaryOpen || false;
         render();
     </script>
 </body>
