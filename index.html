@@ -9,8 +9,11 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        .ledger-row input, .ledger-row select { background: #020617; border: 1px solid #1e293b; color: #e2e8f0; font-size: 0.75rem; padding: 4px 6px; border-radius: 4px; }
+        .ledger-row input, .ledger-row select { background: #020617; border: 1px solid #1e293b; color: #e2e8f0; font-size: 0.75rem; padding: 4px 6px; border-radius: 4px; min-width: 0; }
         .ledger-row input:focus, .ledger-row select:focus { border-color: #10b981; outline: none; }
+        .ledger-row select { text-overflow: ellipsis; }
+        .ledger-del-btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: #f43f5e; font-size: 18px; line-height: 1; flex-shrink: 0; }
+        .ledger-del-btn:hover { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
         .ap-label-input { background: transparent; border: none; border-bottom: 1px dashed #475569; color: #e2e8f0; font-weight: 700; font-size: 1.125rem; width: 100%; outline: none; }
         .ap-label-input:focus { border-bottom-color: #10b981; }
         #export_modal { transition: opacity 0.15s; }
@@ -25,7 +28,7 @@
         <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
                 <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| ERP V4.4</span></h1>
-                <p class="text-xs text-slate-400 mt-1">Live DWP Constants · Active Loss Shields · Offline State Sync</p>
+                <p class="text-xs text-slate-400 mt-1">DWP Portal Categories · Loss-Flow Transparency · Annual Summary · Offline Sync</p>
             </div>
             <div class="flex gap-2 flex-wrap">
                 <button onclick="exportJSON()" class="bg-slate-800 hover:bg-slate-700 text-xs text-indigo-400 font-bold py-1.5 px-3 rounded border border-indigo-900 transition-colors flex items-center gap-1">
@@ -149,18 +152,40 @@
         // Month labels for UK tax year (Apr = AP1 ... Mar = AP12)
         const MONTH_LABELS = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
 
+        // V4.4: Categories now match the official DWP Portal labels exactly
         const dwpCategories = [
-            "Equipment & Hardware", "Stock & Raw Materials", "Software & Subscriptions",
-            "Marketing & PR", "Admin & Professional Fees", "Travel & Transport", "Rent & Utilities (Business)"
+            "Office and equipment costs",
+            "Goods and materials",
+            "Clothing",
+            "Professional subscriptions",
+            "Vehicle expenses",
+            "Transport and travel expenses",
+            "Legal and financial costs",
+            "Marketing and advertising",
+            "Other"
         ];
 
-        const makeDefaultAPs = () => Array(12).fill(null).map((_, i) => ({
-            label: "",   // NEW: user-editable name, empty = use default
-            incomes: i === 0 ? [{desc: "Pre-booked Client", customer: "Client A", amount: 2080}] : [],
-            expenses: i === 0 ? [{desc: "RTX Laptop + Admin", vendor: "Overclockers", cat: "Equipment & Hardware", amount: 2819.88}] : [],
+        // Maps legacy (pre-V4.4) categories to the new DWP Portal labels.
+        // Applied when loading from localStorage or imported JSON so existing data doesn't break.
+        const CATEGORY_MIGRATION = {
+            "Equipment & Hardware":       "Office and equipment costs",
+            "Stock & Raw Materials":      "Goods and materials",
+            "Software & Subscriptions":   "Professional subscriptions",
+            "Marketing & PR":             "Marketing and advertising",
+            "Admin & Professional Fees":  "Legal and financial costs",
+            "Travel & Transport":         "Transport and travel expenses",
+            "Rent & Utilities (Business)":"Other"
+        };
+        const migrateCat = (c) => CATEGORY_MIGRATION[c] || (dwpCategories.includes(c) ? c : "Other");
+
+        // Demo seed data removed — fresh installs start with empty ledgers.
+        const makeDefaultAPs = () => Array(12).fill(null).map(() => ({
+            label: "",
+            incomes: [],
+            expenses: [],
             drawings: 0,
             persExp: 0,
-            notes: "",   // NEW: per-AP notes
+            notes: "",
             ledgerOpen: false
         }));
 
@@ -174,14 +199,14 @@
             try {
                 const stored = JSON.parse(localStorage.getItem('lucid_v42_state'));
                 if (stored && stored.globals && stored.aps) {
-                    // Migrate: add any missing fields to existing AP entries
+                    // Migrate: add any missing fields and remap legacy categories
                     stored.aps = stored.aps.map(ap => ({
                         label: ap.label || "",
                         notes: ap.notes || "",
                         // Legacy support: map old monthName to label if label is missing
                         ...(ap.label === undefined && ap.monthName ? { label: ap.monthName.replace(/^AP\s*\d+\s*/, '').trim() } : {}),
                         incomes: ap.incomes || [],
-                        expenses: ap.expenses || [],
+                        expenses: (ap.expenses || []).map(e => ({ ...e, cat: migrateCat(e.cat) })),
                         drawings: ap.drawings || 0,
                         persExp: ap.persExp || 0,
                         ledgerOpen: ap.ledgerOpen || false
@@ -246,7 +271,7 @@
                             label: ap.label || "",
                             notes: ap.notes || "",
                             incomes: ap.incomes || [],
-                            expenses: ap.expenses || [],
+                            expenses: (ap.expenses || []).map(e => ({ ...e, cat: migrateCat(e.cat) })),
                             drawings: ap.drawings || 0,
                             persExp: ap.persExp || 0,
                             ledgerOpen: ap.ledgerOpen || false
@@ -467,9 +492,20 @@
             ap.incomes.forEach(x => { csv += `"${x.desc}","${x.customer}",${x.amount}\r\n`; });
             csv += `,,Total Income,${r.totalInc}\r\n\r\n`;
 
-            csv += "EXPENSES\r\nCategory,Description,Vendor,Amount (£)\r\n";
-            ap.expenses.forEach(x => { csv += `"${x.cat}","${x.desc}","${x.vendor}",${x.amount}\r\n`; });
+            csv += "EXPENSES (ITEMISED)\r\nCategory,Description,Vendor,Amount (£)\r\n";
+            const catTotalsExp = {};
+            ap.expenses.forEach(x => {
+                csv += `"${x.cat}","${x.desc}","${x.vendor}",${x.amount}\r\n`;
+                if (x.amount > 0) catTotalsExp[x.cat] = (catTotalsExp[x.cat] || 0) + x.amount;
+            });
             csv += `,,,Total Expenses,${r.totalExp}\r\n\r\n`;
+
+            // V4.4: Portal-ready category totals — values to paste into each DWP portal field
+            csv += "EXPENSE TOTALS BY DWP CATEGORY\r\nCategory,Amount (£)\r\n";
+            dwpCategories.forEach(c => {
+                if ((catTotalsExp[c] || 0) > 0) csv += `"${c}",${catTotalsExp[c].toFixed(2)}\r\n`;
+            });
+            csv += "\r\n";
 
             csv += "SUMMARY\r\n";
             csv += `Raw Net Profit,${r.netProfit}\r\n`;
@@ -577,6 +613,28 @@
                     </div>
                 ` : '';
 
+                // V4.4: DWP Portal Totals — aggregate expenses by category so the user can
+                // paste each value straight into the corresponding portal field.
+                // Preserves the order of dwpCategories array (matches the form layout).
+                const catTotals = {};
+                ap.expenses.forEach(e => {
+                    if (e.amount > 0) catTotals[e.cat] = (catTotals[e.cat] || 0) + e.amount;
+                });
+                const orderedCatEntries = dwpCategories
+                    .filter(c => (catTotals[c] || 0) > 0)
+                    .map(c => [c, catTotals[c]]);
+                const catTotalsHtml = orderedCatEntries.length > 0 ? `
+                    <div class="bg-slate-950 rounded p-2 border border-slate-800/50 mt-3">
+                        <h4 class="text-[9px] font-bold text-slate-600 uppercase mb-1 tracking-wider">Portal Totals</h4>
+                        ${orderedCatEntries.map(([cat, amt]) => `
+                            <div class="flex justify-between text-[10px] mb-0.5 gap-2">
+                                <span class="text-slate-500 truncate" title="${cat}">${cat}:</span>
+                                <span class="text-rose-300 font-medium flex-shrink-0">${fmt(amt)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '';
+
                 html += `
                 <div class="bg-slate-900 rounded-lg border border-slate-800 shadow-sm overflow-hidden">
                     <div class="grid grid-cols-1 md:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-slate-800 bg-slate-900 relative">
@@ -611,6 +669,7 @@
                             <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Income:</span><span class="text-white">${fmt(r.totalInc)}</span></div>
                             <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Total Expenses:</span><span class="text-emerald-400">-${fmt(r.totalExp)}</span></div>
                             <div class="flex justify-between text-xs pt-1 border-t border-slate-800 mt-1"><span class="text-slate-400">Raw Profit:</span><span class="font-bold ${r.netProfit < 0 ? 'text-rose-400' : 'text-white'}">${fmt(r.netProfit)}</span></div>
+                            ${catTotalsHtml}
                         </div>
 
                         <!-- Personal Transfers -->
@@ -684,11 +743,11 @@
                                 <div class="space-y-2">
                                     ${ap.incomes.length === 0 ? '<div class="text-xs text-slate-600 italic">No income recorded.</div>' : ''}
                                     ${ap.incomes.map((inc, idx) => `
-                                    <div class="ledger-row grid grid-cols-[3fr_2fr_100px_auto] gap-2 items-center">
+                                    <div class="ledger-row grid grid-cols-[3fr_2fr_100px_24px] gap-2 items-center">
                                         <input type="text" placeholder="Desc (e.g. Inv 246)" value="${inc.desc}" onchange="updateIncome(${i},${idx},'desc',this.value)">
                                         <input type="text" placeholder="Customer" value="${inc.customer}" onchange="updateIncome(${i},${idx},'customer',this.value)">
                                         <input type="number" step="0.01" placeholder="£" value="${inc.amount}" onchange="updateIncome(${i},${idx},'amount',this.value)" class="text-emerald-400 font-bold">
-                                        <button onclick="removeIncome(${i},${idx})" class="text-rose-500 hover:text-rose-400 text-sm font-bold">×</button>
+                                        <button onclick="removeIncome(${i},${idx})" class="ledger-del-btn" title="Delete row">×</button>
                                     </div>`).join('')}
                                 </div>
                             </div>
@@ -702,14 +761,14 @@
                                 <div class="space-y-2">
                                     ${ap.expenses.length === 0 ? '<div class="text-xs text-slate-600 italic">No expenses recorded.</div>' : ''}
                                     ${ap.expenses.map((exp, idx) => `
-                                    <div class="ledger-row grid grid-cols-[2fr_2fr_3fr_100px_auto] gap-2 items-center">
+                                    <div class="ledger-row grid grid-cols-[2fr_2fr_3fr_100px_24px] gap-2 items-center">
                                         <input type="text" placeholder="Desc" value="${exp.desc}" onchange="updateExpense(${i},${idx},'desc',this.value)">
                                         <input type="text" placeholder="Vendor" value="${exp.vendor}" onchange="updateExpense(${i},${idx},'vendor',this.value)">
                                         <select onchange="updateExpense(${i},${idx},'cat',this.value)">
                                             ${dwpCategories.map(c => `<option value="${c}" ${exp.cat===c?'selected':''}>${c}</option>`).join('')}
                                         </select>
                                         <input type="number" step="0.01" placeholder="£" value="${exp.amount}" onchange="updateExpense(${i},${idx},'amount',this.value)" class="text-rose-400 font-bold">
-                                        <button onclick="removeExpense(${i},${idx})" class="text-rose-500 hover:text-rose-400 text-sm font-bold">×</button>
+                                        <button onclick="removeExpense(${i},${idx})" class="ledger-del-btn" title="Delete row">×</button>
                                     </div>`).join('')}
                                 </div>
                             </div>
