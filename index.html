@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucidelusion ERP & UC Reporter V4.4</title>
+    <title>Lucidelusion ERP & UC Reporter V4.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         ::-webkit-scrollbar { width: 8px; }
@@ -27,8 +27,8 @@
     <div class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-xl">
         <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| ERP V4.4</span></h1>
-                <p class="text-xs text-slate-400 mt-1">DWP Portal Categories · Loss-Flow Transparency · Annual Summary · Offline Sync</p>
+                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">LUCIDELUSION <span class="text-slate-500 font-medium">| ERP V4.5</span></h1>
+                <p class="text-xs text-slate-400 mt-1">Configurable DWP Rates (2026/27) · Loss-Flow Transparency · Portal-Ready Exports</p>
             </div>
             <div class="flex gap-2 flex-wrap">
                 <button onclick="exportJSON()" class="bg-slate-800 hover:bg-slate-700 text-xs text-indigo-400 font-bold py-1.5 px-3 rounded border border-indigo-900 transition-colors flex items-center gap-1">
@@ -103,6 +103,44 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- V4.5: DWP Rates panel — configurable so future yearly updates don't need code changes -->
+        <div class="bg-slate-900/60 border-t border-slate-800 px-6 py-2 text-xs flex items-center justify-between flex-wrap gap-2">
+            <div class="text-slate-400 flex items-center gap-1 flex-wrap">
+                <span class="text-slate-500 font-bold uppercase tracking-wider text-[10px]">DWP Rates 2026/27:</span>
+                <span>Max UC <span class="text-white font-bold" id="r_baseUC_disp">£1,032.78</span></span>
+                <span class="text-slate-700">·</span>
+                <span>WA <span class="text-white font-bold" id="r_waHigh_disp">£710</span> / <span class="text-white font-bold" id="r_waLow_disp">£427</span></span>
+                <span class="text-slate-700">·</span>
+                <span>Taper <span class="text-white font-bold">55%</span></span>
+                <span class="text-slate-700">·</span>
+                <span>Capital <span class="text-white font-bold">£6k–£16k</span></span>
+            </div>
+            <button onclick="toggleRatesPanel()" class="text-indigo-400 hover:text-indigo-300 font-bold text-[11px] flex items-center gap-1">
+                <span id="rates_toggle_label">Edit Rates</span>
+                <svg id="rates_chevron" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+        </div>
+        <div id="rates_panel" class="hidden bg-slate-900/40 border-t border-slate-800 px-6 py-3">
+            <div class="flex flex-wrap gap-3 items-end mb-2">
+                <div>
+                    <label class="block text-slate-500 mb-1 text-[10px]" title="Total UC entitlement before housing element & deductions. = Standard allowance + child elements + LCWRA + carer element + other elements (excluding housing).">Max UC (£) <span class="text-slate-600">ⓘ</span></label>
+                    <input type="number" step="0.01" id="r_baseUC" value="1032.78" class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs" onchange="saveAndCalc()">
+                </div>
+                <div>
+                    <label class="block text-slate-500 mb-1 text-[10px]" title="Work allowance when you DON'T receive the housing element (Apr 2026 onward)">WA Higher (£)</label>
+                    <input type="number" step="0.01" id="r_waHigh" value="710" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs" onchange="saveAndCalc()">
+                </div>
+                <div>
+                    <label class="block text-slate-500 mb-1 text-[10px]" title="Work allowance when you DO receive the housing element (Apr 2026 onward)">WA Lower (£)</label>
+                    <input type="number" step="0.01" id="r_waLow" value="427" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs" onchange="saveAndCalc()">
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-500 leading-relaxed">
+                <span class="text-slate-400 font-bold">Max UC</span> = Standard allowance (e.g. £424.90 single 25+) + Child elements + LCWRA (if applicable) + Carer + other elements <em>excluding</em> housing. Housing subsidy is added separately when "Enable Housing" is ticked.
+                <span class="text-amber-400 ml-1">2026/27 changes:</span> two-child limit removed (6 Apr 2026); LCWRA reduced for new claimants from Apr 2026 (£217.26); existing claimants protected.
+            </p>
         </div>
     </div>
 
@@ -190,8 +228,18 @@
         }));
 
         const defaultState = {
-            globals: { starling: 1959.01, personal: 5553.48, capital: 4000.00, loss_cf: 858.24, h_active: false, h_month: 5, h_lha: 1621, h_rent: 2800 },
+            globals: {
+                starling: 1959.01, personal: 5553.48, capital: 4000.00, loss_cf: 858.24,
+                h_active: false, h_month: 5, h_lha: 1621, h_rent: 2800,
+                // V4.5: DWP rates effective 6 April 2026 (2026/27 tax year)
+                baseUC: 1032.78,         // user-specific: standard + child + other elements (NOT housing)
+                rates: {
+                    waHigh: 710.00,       // work allowance — NO housing element
+                    waLow:  427.00        // work allowance — WITH housing element
+                }
+            },
             summaryOpen: false,
+            ratesPanelOpen: false,
             aps: makeDefaultAPs()
         };
 
@@ -199,11 +247,18 @@
             try {
                 const stored = JSON.parse(localStorage.getItem('lucid_v42_state'));
                 if (stored && stored.globals && stored.aps) {
-                    // Migrate: add any missing fields and remap legacy categories
+                    // V4.5 migration: populate new rate fields if absent
+                    if (typeof stored.globals.baseUC !== 'number') stored.globals.baseUC = defaultState.globals.baseUC;
+                    if (!stored.globals.rates || typeof stored.globals.rates !== 'object') {
+                        stored.globals.rates = { ...defaultState.globals.rates };
+                    } else {
+                        if (typeof stored.globals.rates.waHigh !== 'number') stored.globals.rates.waHigh = defaultState.globals.rates.waHigh;
+                        if (typeof stored.globals.rates.waLow  !== 'number') stored.globals.rates.waLow  = defaultState.globals.rates.waLow;
+                    }
+                    // Migrate AP entries (same as before)
                     stored.aps = stored.aps.map(ap => ({
                         label: ap.label || "",
                         notes: ap.notes || "",
-                        // Legacy support: map old monthName to label if label is missing
                         ...(ap.label === undefined && ap.monthName ? { label: ap.monthName.replace(/^AP\s*\d+\s*/, '').trim() } : {}),
                         incomes: ap.incomes || [],
                         expenses: (ap.expenses || []).map(e => ({ ...e, cat: migrateCat(e.cat) })),
@@ -212,6 +267,7 @@
                         ledgerOpen: ap.ledgerOpen || false
                     }));
                     stored.summaryOpen = stored.summaryOpen || false;
+                    stored.ratesPanelOpen = stored.ratesPanelOpen || false;
                     return stored;
                 }
             } catch(e) {}
@@ -229,6 +285,10 @@
             state.globals.h_month  = parseInt(document.getElementById('h_month').value);
             state.globals.h_lha    = parseFloat(document.getElementById('h_lha').value) || 0;
             state.globals.h_rent   = parseFloat(document.getElementById('h_rent').value) || 0;
+            // V4.5: DWP rates
+            state.globals.baseUC       = parseFloat(document.getElementById('r_baseUC').value) || 0;
+            state.globals.rates.waHigh = parseFloat(document.getElementById('r_waHigh').value) || 0;
+            state.globals.rates.waLow  = parseFloat(document.getElementById('r_waLow').value)  || 0;
             localStorage.setItem('lucid_v42_state', JSON.stringify(state));
         }
 
@@ -308,6 +368,22 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
+        // ===== DWP RATES PANEL (V4.5) =====
+
+        function toggleRatesPanel() {
+            state.ratesPanelOpen = !state.ratesPanelOpen;
+            saveState();
+            applyRatesPanelVisibility();
+        }
+        function applyRatesPanelVisibility() {
+            const panel = document.getElementById('rates_panel');
+            const label = document.getElementById('rates_toggle_label');
+            const chevron = document.getElementById('rates_chevron');
+            panel.classList.toggle('hidden', !state.ratesPanelOpen);
+            label.textContent = state.ratesPanelOpen ? 'Close' : 'Edit Rates';
+            chevron.style.transform = state.ratesPanelOpen ? 'rotate(180deg)' : '';
+        }
+
         // ===== SUMMARY PANEL =====
 
         let summaryOpen = false;
@@ -350,9 +426,10 @@
         // Separated from render so summary panel can reuse it.
 
         function calculate() {
-            const baseUC = 985.76;
-            const waHigh = 684.00;
-            const waLow  = 404.00;
+            // V4.5: rates now sourced from state, defaulting to 2026/27 DWP values
+            const baseUC = state.globals.baseUC;
+            const waHigh = state.globals.rates.waHigh;
+            const waLow  = state.globals.rates.waLow;
             let curBiz = state.globals.starling + state.globals.capital;
             let curPers = state.globals.personal - state.globals.capital;
             let lossCF  = state.globals.loss_cf;
@@ -486,7 +563,18 @@
             const r = results[i];
             const label = ap.label || `AP${i+1} (${MONTH_LABELS[i]})`;
 
-            let csv = `"Universal Credit Report — ${label}"\r\n\r\n`;
+            let csv = `"Universal Credit Report — ${label}"\r\n`;
+            csv += `"Generated by Lucidelusion ERP V4.5 on ${new Date().toISOString().slice(0,10)}"\r\n\r\n`;
+
+            // V4.5: Record the DWP rates applied so the report is reproducible
+            csv += "DWP RATES APPLIED\r\n";
+            csv += `Max UC (Standard + elements ex. housing),${state.globals.baseUC}\r\n`;
+            csv += `Work Allowance — Higher (no housing),${state.globals.rates.waHigh}\r\n`;
+            csv += `Work Allowance — Lower (with housing),${state.globals.rates.waLow}\r\n`;
+            csv += `Taper Rate,55%\r\n`;
+            csv += `Capital Disregard,£6000\r\n`;
+            csv += `Capital Upper Limit,£16000\r\n`;
+            csv += `Tariff Income,£4.35 per £250 (or part)\r\n\r\n`;
 
             csv += "INCOME\r\nDescription,Customer,Amount (£)\r\n";
             ap.incomes.forEach(x => { csv += `"${x.desc}","${x.customer}",${x.amount}\r\n`; });
@@ -545,6 +633,15 @@
             document.getElementById('h_lha').value      = state.globals.h_lha;
             document.getElementById('h_rent').value     = state.globals.h_rent;
             toggleHousing();
+
+            // V4.5: Sync DWP rates inputs + read-only display
+            document.getElementById('r_baseUC').value = state.globals.baseUC;
+            document.getElementById('r_waHigh').value = state.globals.rates.waHigh;
+            document.getElementById('r_waLow').value  = state.globals.rates.waLow;
+            document.getElementById('r_baseUC_disp').textContent = fmt(state.globals.baseUC);
+            document.getElementById('r_waHigh_disp').textContent = '£' + state.globals.rates.waHigh.toLocaleString('en-GB');
+            document.getElementById('r_waLow_disp').textContent  = '£' + state.globals.rates.waLow.toLocaleString('en-GB');
+            applyRatesPanelVisibility();
 
             // Sync summary panel state
             if (state.summaryOpen !== summaryOpen) {
